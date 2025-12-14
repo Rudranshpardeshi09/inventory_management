@@ -1,0 +1,96 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}Edit Item{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h2 class="text-center mb-4">✏️ Edit Item</h2>
+    <form method="POST" class="card p-4 shadow-sm">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label>Name</label>
+                <input type="text" name="name" class="form-control" value="{{ item.name }}" required>
+            </div>
+
+            <!-- Category Dropdown with Custom Input -->
+            <div class="col-md-6 mb-3">
+                <label for="category" class="form-label">Category</label>
+                <select id="category" name="category" class="form-select" onchange="toggleCustomCategory(this)"
+                    required>
+
+                    <option value="">Select Category</option>
+
+                    {% for cat in CATEGORIES %}
+                    <option value="{{ cat }}" {% if item.category == cat %}selected{% endif %}>
+                        {{ cat }}
+                    </option>
+                    {% endfor %}
+
+                    <option value="Other" {% if item.category not in CATEGORIES %}selected{% endif %}>
+                        + Add New Category
+                    </option>
+                </select>
+
+                {% if item.category not in CATEGORIES %}
+                <div class="mt-2" id="custom-category-div" style="display:block;">
+                    {% else %}
+                    <div class="mt-2" id="custom-category-div" style="display:none;">
+                        {% endif %}
+                        <input type="text" name="custom_category" id="custom_category" class="form-control"
+                            placeholder="Enter new category"
+                            value="{% if item.category not in CATEGORIES %}{{ item.category }}{% endif %}">
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label>Quantity</label>
+                    <input type="number" name="quantity" class="form-control" value="{{ item.quantity }}" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label>Reorder Level</label>
+                    <input type="number" name="reorder_level" class="form-control" value="{{ item.reorder_level }}"
+                        required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label>Unit Price</label>
+                    <input type="number" step="0.01" name="unit_price" class="form-control"
+                        value="{{ item.unit_price }}" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label>Supplier</label>
+                <input type="text" name="supplier" class="form-control" value="{{ item.supplier }}">
+            </div>
+            <div class="mb-3">
+                <label>Location</label>
+                <input type="text" name="location" class="form-control" value="{{ item.location }}">
+            </div>
+            <div class="mb-3">
+                <label>Description</label>
+                <textarea name="description" class="form-control" rows="3">{{ item.description }}</textarea>
+            </div>
+
+            <button type="submit" class="btn btn-success">Update</button>
+            <a href="{% url 'inventory_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+<!-- Script to toggle custom category input -->
+<script>
+    function toggleCustomCategory(select) {
+        var customDiv = document.getElementById('custom-category-div');
+        if (select.value === 'Other') {
+            customDiv.style.display = 'block';
+        } else {
+            customDiv.style.display = 'none';
+            document.getElementById('custom_category').value = '';
+        }
+    }
+</script>
+{% endblock %}

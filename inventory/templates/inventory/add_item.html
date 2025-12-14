@@ -1,0 +1,199 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}Add Item{% endblock %}
+
+{% block content %}
+<style>
+    /* Page container animation */
+    .fade-slide {
+        animation: fadeSlide 0.8s ease-in-out;
+    }
+
+    @keyframes fadeSlide {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Smooth form fields */
+    .form-control,
+    .form-select {
+        transition: 0.3s ease-in-out;
+        font-weight: 500;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        background: #ffffff !important;
+        border: 2px solid #4facfe !important;
+        box-shadow: 0 0 12px rgba(79, 172, 254, 0.4) !important;
+        transform: translateY(-2px);
+    }
+
+    /* Card Glowing effect */
+    .glassy-card {
+        backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 20px;
+        transition: all 0.3s;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .glassy-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+    }
+
+    /* Button Animation */
+    .btn-animated {
+        position: relative;
+        overflow: hidden;
+        transition: 0.4s;
+        font-weight: 650 !important;
+        letter-spacing: 1px;
+        border-radius: 14px !important;
+        color: #fff;
+    }
+
+    .btn-animated span {
+        position: absolute;
+        display: block;
+    }
+
+    .btn-animated:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .btn-main {
+        background: linear-gradient(90deg, #36d1dc, #5b86e5);
+    }
+
+    .btn-cancel {
+        background: linear-gradient(90deg, #ff7e5f, #feb47b);
+    }
+
+    /* Section label styling */
+    label {
+        font-weight: 600 !important;
+    }
+
+    /* Title Gradient */
+    .title-style {
+        background: linear-gradient(90deg, #6a11cb, #2575fc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+
+<div class="container py-5 fade-slide" style="max-width: 1200px;">
+
+    <h2 class="text-center mb-5 fw-bold title-style" style="font-size: 2.7rem;">
+        ➕ Add New Item
+    </h2>
+
+    <form method="POST" class="glassy-card p-5 shadow-lg">
+        {% csrf_token %}
+
+        <!-- Item Name & Category -->
+        <div class="row mb-3">
+            <div class="col-md-6 mb-3">
+                <label class="text-primary">Item Name</label>
+                <input type="text" name="name" class="form-control shadow-sm border-0" placeholder="Enter item name"
+                    required>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label for="category" class="text-primary">Category</label>
+                <select id="category" name="category" class="form-select shadow-sm border-0"
+                    onchange="toggleCustomCategory(this)" required>
+                    <option value="">Select Category</option>
+                    
+                    {% for category in CATEGORIES %}
+                    <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+
+                    <option value="Other">+ Add New Category</option>
+                </select>
+
+                <div class="mt-2" id="custom-category-div" style="display: none;">
+                    <input type="text" name="custom_category" id="custom_category"
+                        class="form-control shadow-sm border-0" placeholder="Enter custom category">
+                </div>
+            </div>
+        </div>
+
+        <!-- Quantity, Reorder, Unit Price -->
+        <div class="row mb-3">
+            <div class="col-md-4 mb-3">
+                <label class="text-success">Quantity</label>
+                <input type="number" name="quantity" class="form-control shadow-sm border-0"
+                    placeholder="Enter quantity" required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-warning">Reorder Level</label>
+                <input type="number" name="reorder_level" class="form-control shadow-sm border-0"
+                    placeholder="Enter reorder level" required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-info">Unit Price</label>
+                <input type="number" name="unit_price" step="0.01" class="form-control shadow-sm border-0"
+                    placeholder="Enter unit price" required>
+            </div>
+        </div>
+
+        <!-- Supplier & Location -->
+        <div class="row mb-3">
+            <div class="col-md-6 mb-3">
+                <label class="text-secondary">Supplier</label>
+                <input type="text" name="supplier" class="form-control shadow-sm border-0"
+                    placeholder="Enter supplier name" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="text-secondary">Storage Location</label>
+                <input type="text" name="location" class="form-control shadow-sm border-0"
+                    placeholder="Enter storage location">
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-4">
+            <label class="text-muted">Description</label>
+            <textarea name="description" class="form-control shadow-sm border-0" rows="4"
+                placeholder="Enter item description"></textarea>
+        </div>
+
+        <!-- Buttons -->
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-animated btn-main px-4 py-2">
+                ✅ Save Item
+            </button>
+
+            <a href="{% url 'inventory_list' %}" class="btn btn-animated btn-cancel px-4 py-2 text-white">
+                ✖ Cancel
+            </a>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    function toggleCustomCategory(select) {
+        var customDiv = document.getElementById('custom-category-div');
+        if (select.value === 'Other') {
+            customDiv.style.display = 'block';
+        } else {
+            customDiv.style.display = 'none';
+            document.getElementById('custom_category').value = '';
+        }
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,651 @@
+# from django.shortcuts import render, redirect, get_object_or_404
+# from django.contrib import messages
+# from .models import Item, Transaction
+# from django.db.models import F
+# from django.core.paginator import Paginator
+# from django.utils import timezone  # ✅ for updating transaction timestamp
+# from django.db import transaction
+# from .models import Item, Issuance
+# from .forms import IssuanceForm, ReceiveForm
+
+# # Predefined categories for dropdown
+# PREDEFINED_CATEGORIES = ["Sensor", "Connector", "Resistor", "Microcontroller"]
+
+# def dashboard(request):
+#     total_items = Item.objects.count()
+#     low_stock = Item.objects.filter(quantity__gt=0, quantity__lte=F('reorder_level')).count()
+#     out_stock = Item.objects.filter(quantity=0).count()
+#     items = Item.objects.all().order_by('serial_no')
+#     paginator = Paginator(items, 10)  # 10 items per page
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+#     context = {
+#         'total_items': total_items,
+#         'low_stock': low_stock,
+#         'out_stock': out_stock,
+#         'items': items,
+#         'PREDEFINED_CATEGORIES': PREDEFINED_CATEGORIES,
+#         'page_obj': page_obj,
+#     }
+#     return render(request, 'inventory/dashboard.html', context)
+
+
+# def inventory_list(request):
+#     items = Item.objects.all().order_by('serial_no')
+#     paginator = Paginator(items, 10)
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+#     context = {
+#         'items': items,
+#         'PREDEFINED_CATEGORIES': PREDEFINED_CATEGORIES,
+#         'page_obj': page_obj,
+#     }
+#     return render(request, 'inventory/inventory_list.html', context)
+
+
+# # def add_item(request):
+# #     if request.method == "POST":
+# #         name = request.POST.get('name')
+# #         category = request.POST.get('category')
+# #         custom_category = request.POST.get('custom_category')
+# #         quantity = request.POST.get('quantity')
+# #         reorder_level = request.POST.get('reorder_level')
+# #         unit_price = request.POST.get('unit_price')
+# #         supplier = request.POST.get('supplier')
+# #         location = request.POST.get('location')
+# #         description = request.POST.get('description')
+
+# #         # Use custom category if "Other" is selected
+# #         final_category = custom_category if category == "Other" and custom_category else category
+
+# #         Item.objects.create(
+# #             name=name,
+# #             category=final_category,
+# #             quantity=quantity,
+# #             reorder_level=reorder_level,
+# #             unit_price=unit_price,
+# #             supplier=supplier,
+# #             location=location,
+# #             description=description
+# #         )
+# #         messages.success(request, "Item added successfully!")
+# #         return redirect('inventory_list')
+
+# #     return render(request, 'inventory/add_item.html', {'PREDEFINED_CATEGORIES': PREDEFINED_CATEGORIES})
+# def add_item(request):
+#     if request.method == "POST":
+#         name = request.POST.get('name')
+#         category = request.POST.get('category')
+#         custom_category = request.POST.get('custom_category')
+#         quantity = request.POST.get('quantity')
+#         reorder_level = request.POST.get('reorder_level')
+#         unit_price = request.POST.get('unit_price')
+#         supplier = request.POST.get('supplier')
+#         location = request.POST.get('location')
+#         description = request.POST.get('description')
+
+#         # Convert numeric fields safely
+#         try:
+#             quantity = int(quantity)
+#             reorder_level = int(reorder_level)
+#             unit_price = float(unit_price)
+#         except ValueError:
+#             messages.error(request, "Please enter valid numbers for quantity, reorder level, and unit price.")
+#             return redirect('add_item')
+
+#         # ✅ Validation: No negative numbers
+#         if quantity < 0:
+#             messages.error(request, "Quantity cannot be negative.")
+#             return redirect('add_item')
+
+#         if reorder_level < 0:
+#             messages.error(request, "Reorder level cannot be negative.")
+#             return redirect('add_item')
+
+#         if unit_price < 0:
+#             messages.error(request, "Unit price cannot be negative.")
+#             return redirect('add_item')
+
+#         # Use custom category if "Other" is selected
+#         final_category = custom_category if category == "Other" and custom_category else category
+
+#         Item.objects.create(
+#             name=name,
+#             category=final_category,
+#             quantity=quantity,
+#             reorder_level=reorder_level,
+#             unit_price=unit_price,
+#             supplier=supplier,
+#             location=location,
+#             description=description
+#         )
+#         messages.success(request, "Item added successfully!")
+#         return redirect('inventory_list')
+
+#     return render(request, 'inventory/add_item.html', {'PREDEFINED_CATEGORIES': ["Sensor", "Connector", "Resistor", "Microcontroller"]})
+
+# def edit_item(request, item_id):
+#     item = get_object_or_404(Item, id=item_id)
+#     if request.method == "POST":
+#         name = request.POST.get('name')
+#         category = request.POST.get('category')
+#         custom_category = request.POST.get('custom_category')
+#         quantity = request.POST.get('quantity')
+#         reorder_level = request.POST.get('reorder_level')
+#         unit_price = request.POST.get('unit_price')
+#         supplier = request.POST.get('supplier')
+#         location = request.POST.get('location')
+#         description = request.POST.get('description')
+
+#         # Update item fields
+#         item.name = name
+#         item.category = custom_category if category == "Other" and custom_category else category
+#         item.quantity = quantity
+#         item.reorder_level = reorder_level
+#         item.unit_price = unit_price
+#         item.supplier = supplier
+#         item.location = location
+#         item.description = description
+#         item.save()
+
+#         messages.success(request, "Item updated successfully!")
+#         return redirect('inventory_list')
+
+#     return render(request, 'inventory/edit_item.html', {'item': item, 'PREDEFINED_CATEGORIES': PREDEFINED_CATEGORIES})
+
+
+# def delete_item(request, item_id):
+#     item = get_object_or_404(Item, id=item_id)
+#     item.delete()
+#     messages.success(request, "Item deleted successfully!")
+#     return redirect('inventory_list')
+
+
+# def add_stock(request, item_id):
+#     item = get_object_or_404(Item, id=item_id)
+#     if request.method == "POST":
+#         qty = int(request.POST.get("quantity"))
+#         item.quantity += qty
+#         item.save()
+#          # Create transaction and update timestamp
+#         txn = Transaction.objects.create(item=item, transaction_type='IN', quantity=qty)
+#         txn.date = timezone.now()  # ✅ manually update timestamp
+#         txn.save()
+#         messages.success(request, f"{qty} units added to {item.name}")
+#         return redirect('inventory_list')
+#     return render(request, 'inventory/add_stock.html', {'item': item})
+
+
+# def remove_stock(request, item_id):
+#     item = get_object_or_404(Item, id=item_id)
+#     if request.method == "POST":
+#         qty = int(request.POST.get("quantity"))
+#         if qty > item.quantity:
+#             messages.error(request, "Not enough stock available")
+#         else:
+#             item.quantity -= qty
+#             item.save()
+#              # Create transaction and update timestamp
+#             txn = Transaction.objects.create(item=item, transaction_type='OUT', quantity=qty)
+#             txn.date = timezone.now()  # ✅ manually update timestamp
+#             txn.save()
+#             messages.success(request, f"{qty} units removed from {item.name}")
+#         return redirect('inventory_list')
+#     return render(request, 'inventory/remove_stock.html', {'item': item})
+
+
+# def transaction_history(request):
+#     # transactions = Transaction.objects.all().order_by('-date')
+#     transactions = Transaction.objects.select_related('item').order_by('-date')
+#     paginator = Paginator(transactions, 10)
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+#     context = {
+#         'transactions': transactions,
+#         'PREDEFINED_CATEGORIES': PREDEFINED_CATEGORIES,
+#         'page_obj': page_obj,
+#     }
+#     return render(request, 'inventory/transaction_history.html', context)
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Item, Transaction, Issuance
+from django.db.models import F
+from django.core.paginator import Paginator
+from django.utils import timezone
+from django.db import transaction
+from .forms import IssuanceForm, ReceiveForm
+import io
+import pandas as pd
+from django.urls import reverse
+from .forms import ExcelUploadForm, ColumnMappingForm
+from .utils import get_all_categories
+
+# Predefined categories for dropdown
+PREDEFINED_CATEGORIES = ["Sensor", "Connector", "Resistor", "Microcontroller"]
+
+# Fields you allow to import and their friendly labels.
+# Keys are model field names, values are display labels in mapping UI.
+IMPORTABLE_FIELDS = {
+    'name': 'Name',
+    'category': 'Category',
+    'quantity': 'Quantity',
+    'reorder_level': 'Reorder Level',
+    'unit_price': 'Unit Price',
+    'supplier': 'Supplier',
+    'location': 'Storage Location',
+    'description': 'Description',
+}
+
+ALLOWED_EXTENSIONS = ('.xlsx', '.xls', '.csv')
+MAX_ROWS_PREVIEW = 5
+MAX_IMPORT_ROWS = 5000  # safety cap; adjust as needed
+
+def import_items_upload(request):
+    """
+    First step: upload file and preview header/first rows.
+    """
+    if request.method == 'POST':
+        form = ExcelUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            f = request.FILES['file']
+            filename = f.name.lower()
+
+            if not filename.endswith(ALLOWED_EXTENSIONS):
+                messages.error(request, "Unsupported file type. Upload .xlsx, .xls or .csv")
+                return redirect('import_items_upload')
+
+            # Read into pandas DataFrame
+            try:
+                # read excel or csv
+                if filename.endswith(('.xls', '.xlsx')):
+                    df = pd.read_excel(f, engine='openpyxl' if filename.endswith('.xlsx') else None)
+                else:
+                    # csv
+                    file_bytes = f.read()
+                    encoding = 'utf-8'
+                    try:
+                        df = pd.read_csv(io.BytesIO(file_bytes), encoding=encoding)
+                    except Exception:
+                        # fallback with latin-1
+                        df = pd.read_csv(io.BytesIO(file_bytes), encoding='latin-1')
+                # Limit rows for preview/safety
+                preview = df.head(MAX_ROWS_PREVIEW)
+            except Exception as e:
+                messages.error(request, f"Failed to parse file: {e}")
+                return redirect('import_items_upload')
+
+            # store raw data in session as JSON-friendly format (list of dicts) OR in memory via request.FILES? 
+            # We'll store small preview + entire file in session via bytes (base64) is heavy — better: store file in temp
+            # For simplicity we'll save uploaded file in request.FILES -> but we need persistence across request.
+            # Simpler approach: save file bytes into session (if small). We'll limit to reasonable sizes.
+            try:
+                f.seek(0)
+                data_bytes = f.read()
+                # store in session as base64 string
+                import base64
+                request.session['import_file_name'] = filename
+                request.session['import_file_bytes'] = base64.b64encode(data_bytes).decode('ascii')
+                request.session['import_has_header'] = bool(form.cleaned_data.get('has_header', True))
+            except Exception as e:
+                messages.warning(request, "Failed to store file in session — you may need to re-upload on mapping step.")
+                # fallback: provide mapping immediately without persisting file
+                request.session.pop('import_file_bytes', None)
+
+            # build columns list for mapping UI
+            cols = list(preview.columns.astype(str))
+            # convert preview to list-of-lists for template
+            preview_rows = preview.fillna('').astype(str).values.tolist()
+
+            context = {
+                'cols': cols,
+                'preview_rows': preview_rows,
+                'importable_fields': IMPORTABLE_FIELDS,
+                'filename': filename,
+                'has_header': form.cleaned_data.get('has_header', True),
+            }
+            return render(request, 'inventory/import_mapping.html', context)
+    else:
+        form = ExcelUploadForm()
+    return render(request, 'inventory/import_upload.html', {'form': form})
+
+def import_items_map(request):
+    """
+    Mapping step: user posted mapping selection -> perform import.
+    Expects the uploaded file in session as 'import_file_bytes'.
+    """
+    # Reconstruct DataFrame from session
+    import base64
+    file_b64 = request.session.get('import_file_bytes')
+    filename = request.session.get('import_file_name')
+    if not file_b64:
+        messages.error(request, "Upload file first.")
+        return redirect('import_items_upload')
+
+    file_bytes = base64.b64decode(file_b64)
+    try:
+        if filename.endswith(('.xls', '.xlsx')):
+            df = pd.read_excel(io.BytesIO(file_bytes), engine='openpyxl' if filename.endswith('.xlsx') else None)
+        else:
+            # csv fallback
+            df = pd.read_csv(io.BytesIO(file_bytes), encoding='utf-8')
+    except Exception as e:
+        messages.error(request, f"Could not read uploaded file: {e}")
+        return redirect('import_items_upload')
+
+    cols = list(df.columns.astype(str))
+    # Read mapping submitted by user
+    if request.method == 'POST':
+        # mapping keys are like 'map_0', 'map_1' etc representing column indices
+        mapping = {}
+        for i, col in enumerate(cols):
+            mapped_to = request.POST.get(f'map_{i}')
+            if mapped_to:
+                mapping[col] = mapped_to  # mapped_to is model field name
+        if not mapping:
+            messages.error(request, "No mapping provided. Map at least one column to import.")
+            return redirect('import_items_upload')
+
+        # Build rows to import
+        rows = []
+        for _, row in df.iterrows():
+            item_kwargs = {}
+            for col_name, model_field in mapping.items():
+                # get value safely and convert for known numeric fields
+                raw_value = row.get(col_name, None)
+                if pd.isna(raw_value):
+                    raw_value = None
+                # convert types if target is numeric
+                if model_field in ('quantity', 'reorder_level'):
+                    try:
+                        item_kwargs[model_field] = int(raw_value) if raw_value is not None else 0
+                    except Exception:
+                        item_kwargs[model_field] = 0
+                elif model_field == 'unit_price':
+                    try:
+                        item_kwargs[model_field] = float(raw_value) if raw_value is not None else 0.0
+                    except Exception:
+                        item_kwargs[model_field] = 0.0
+                else:
+                    item_kwargs[model_field] = str(raw_value).strip() if raw_value is not None else ''
+            rows.append(item_kwargs)
+
+        # safety cap
+        if len(rows) > MAX_IMPORT_ROWS:
+            messages.error(request, f"File too large. Max {MAX_IMPORT_ROWS} rows allowed.")
+            return redirect('import_items_upload')
+
+        # Start DB import transaction
+        created = 0
+        errors = []
+        with transaction.atomic():
+            for idx, kw in enumerate(rows, start=1):
+                # Build final kwargs for Item.create. Only include allowed fields.
+                item_data = {k: v for k, v in kw.items() if k in IMPORTABLE_FIELDS}
+                # if category field is empty, set default
+                if 'category' in item_data and not item_data['category']:
+                    item_data['category'] = 'Other'
+                # Ensure numeric fields have defaults
+                item_data.setdefault('quantity', 0)
+                item_data.setdefault('reorder_level', 0)
+                item_data.setdefault('unit_price', 0.0)
+                # Validate (basic)
+                try:
+                    Item.objects.create(**item_data)
+                    created += 1
+                except Exception as e:
+                    errors.append(f"Row {idx}: {e}")
+                    # depending on your policy you can rollback entire transaction or continue; here we continue but still inside transaction
+            # commit happens automatically if no exception
+        # cleanup session
+        request.session.pop('import_file_bytes', None)
+        request.session.pop('import_file_name', None)
+        messages.success(request, f"Imported {created} rows.")
+        if errors:
+            messages.warning(request, f"Import completed with errors: {len(errors)}. First error: {errors[0]}")
+        return redirect('inventory_list')
+
+    # GET: render mapping UI if user arrives without POST (fallback)
+    preview = df.head(MAX_ROWS_PREVIEW).fillna('').astype(str).values.tolist()
+    context = {
+        'cols': cols,
+        'preview_rows': preview,
+        'importable_fields': IMPORTABLE_FIELDS,
+        'filename': filename,
+    }
+    return render(request, 'inventory/import_mapping.html', context)
+
+
+
+def dashboard(request):
+    total_items = Item.objects.count()
+    low_stock = Item.objects.filter(quantity__gt=0, quantity__lte=F('reorder_level')).count()
+    out_stock = Item.objects.filter(quantity=0).count()
+    items = Item.objects.all().order_by('serial_no')
+    paginator = Paginator(items, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'total_items': total_items,
+        'low_stock': low_stock,
+        'out_stock': out_stock,
+        'items': items,
+        'CATEGORIES': get_all_categories(),
+        'page_obj': page_obj,
+    }
+    return render(request, 'inventory/dashboard.html', context)
+
+
+def inventory_list(request):
+    items = Item.objects.all().order_by('serial_no')
+    paginator = Paginator(items, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'items': items,
+        'CATEGORIES': get_all_categories(),
+        'page_obj': page_obj,
+    }
+    return render(request, 'inventory/inventory_list.html', context)
+
+
+def add_item(request):
+    if request.method == "POST":
+        name = request.POST.get('name')
+        category = request.POST.get('category')
+        custom_category = request.POST.get('custom_category')
+        quantity = request.POST.get('quantity')
+        reorder_level = request.POST.get('reorder_level')
+        unit_price = request.POST.get('unit_price')
+        supplier = request.POST.get('supplier')
+        location = request.POST.get('location')
+        description = request.POST.get('description')
+
+        try:
+            quantity = int(quantity)
+            reorder_level = int(reorder_level)
+            unit_price = float(unit_price)
+        except ValueError:
+            messages.error(request, "Please enter valid numbers for quantity, reorder level, and unit price.")
+            return redirect('add_item')
+
+        if quantity < 0 or reorder_level < 0 or unit_price < 0:
+            messages.error(request, "Negative values are not allowed.")
+            return redirect('add_item')
+
+        #FINAL CATEGORY LOGIC
+        final_category = custom_category.strip() if category == "Other" and custom_category else category
+
+        Item.objects.create(
+            name=name,
+            category=final_category,
+            quantity=quantity,
+            reorder_level=reorder_level,
+            unit_price=unit_price,
+            supplier=supplier,
+            location=location,
+            description=description
+        )
+        messages.success(request, "Item added successfully!")
+        return redirect('inventory_list')
+    context = {
+        'CATEGORIES': get_all_categories(),  # 🔥 dynamic categories
+    }
+    return render(request, 'inventory/add_item.html',context) #
+
+
+def edit_item(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    if request.method == "POST":
+        item.name = request.POST.get('name')
+        category = request.POST.get('category')
+        custom_category = request.POST.get('custom_category')
+        item.category = custom_category if category == "Other" and custom_category else category
+        item.quantity = request.POST.get('quantity')
+        item.reorder_level = request.POST.get('reorder_level')
+        item.unit_price = request.POST.get('unit_price')
+        item.supplier = request.POST.get('supplier')
+        item.location = request.POST.get('location')
+        item.description = request.POST.get('description')
+        item.save()
+        messages.success(request, "Item updated successfully!")
+        return redirect('inventory_list')
+   
+    return render(request, 'inventory/edit_item.html',{
+        'item': item,
+        'CATEGORIES': get_all_categories(),
+    }) #
+
+
+def delete_item(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    item.delete()
+    messages.success(request, "Item deleted successfully!")
+    return redirect('inventory_list')
+
+
+def add_stock(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    if request.method == "POST":
+        qty = int(request.POST.get("quantity"))
+        item.quantity += qty
+        item.save()
+        txn = Transaction.objects.create(item=item, transaction_type='IN', quantity=qty)
+        txn.date = timezone.now()
+        txn.save()
+        messages.success(request, f"{qty} units added to {item.name}")
+        return redirect('inventory_list')
+    return render(request, 'inventory/add_stock.html', {'item': item})
+
+
+def remove_stock(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    if request.method == "POST":
+        qty = int(request.POST.get("quantity"))
+        if qty > item.quantity:
+            messages.error(request, "Not enough stock available")
+        else:
+            item.quantity -= qty
+            item.save()
+            txn = Transaction.objects.create(item=item, transaction_type='OUT', quantity=qty)
+            txn.date = timezone.now()
+            txn.save()
+            messages.success(request, f"{qty} units removed from {item.name}")
+        return redirect('inventory_list')
+    return render(request, 'inventory/remove_stock.html', {'item': item})
+
+
+def transaction_history(request):
+    transactions = Transaction.objects.select_related('item').order_by('-date')
+    paginator = Paginator(transactions, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'transactions': transactions,
+        'CATEGORIES': get_all_categories(),
+        'page_obj': page_obj,
+    }
+    return render(request, 'inventory/transaction_history.html', context)
+
+
+# ----------------------------- #
+#     ISSUER PAGE SECTION       #
+# ----------------------------- #
+
+def issuance_list(request):
+    """Display all issuances and provide issue/receive actions."""
+    issuances = Issuance.objects.select_related('item').all().order_by('-issue_date')
+    form = IssuanceForm()
+    receive_form = ReceiveForm()
+    return render(request, 'inventory/issuance_list.html', {
+        'issuances': issuances,
+        'form': form,
+        'receive_form': receive_form,
+    })
+
+
+@transaction.atomic
+def issue_item(request):
+    """Handles issuing of components and deducts from stock."""
+    if request.method != 'POST':
+        return redirect('issuance_list')
+
+    form = IssuanceForm(request.POST)
+    if not form.is_valid():
+        for err in form.errors.values():
+            messages.error(request, err)
+        return redirect('issuance_list')
+
+    item = form.cleaned_data['item']
+    qty = form.cleaned_data['quantity']
+
+    # Lock item and update quantity safely
+    item = Item.objects.select_for_update().get(pk=item.pk)
+    if item.quantity < qty:
+        messages.error(request, f"Not enough stock. Available: {item.quantity}")
+        return redirect('issuance_list')
+
+    Item.objects.filter(pk=item.pk).update(quantity=F('quantity') - qty)
+
+    issuance = form.save(commit=False)
+    issuance.issue_date = timezone.now()
+    issuance.receive_date = None
+    issuance.received = False
+    issuance.save()
+
+    messages.success(request, f"Issued {qty} × {item.name} successfully.")
+    return redirect('issuance_list')
+
+
+@transaction.atomic
+def receive_item(request):
+    """Handles return/receive of issued components."""
+    if request.method != 'POST':
+        return redirect('issuance_list')
+
+    form = ReceiveForm(request.POST)
+    if not form.is_valid():
+        for err in form.errors.values():
+            messages.error(request, err)
+        return redirect('issuance_list')
+
+    issuance = get_object_or_404(Issuance, pk=form.cleaned_data['issuance_id'])
+    if issuance.received:
+        messages.warning(request, "This issuance has already been received.")
+        return redirect('issuance_list')
+
+    status = form.cleaned_data['component_status']
+    remark = form.cleaned_data.get('remark', '')
+
+    issuance.component_status = status
+    issuance.receive_date = timezone.now()
+    issuance.remark = remark
+    issuance.received = True
+    issuance.save()
+
+    # Add stock back if OK or Faulty
+    if status in ('ok', 'faulty'):
+        Item.objects.filter(pk=issuance.item.pk).update(quantity=F('quantity') + issuance.quantity)
+
+    messages.success(request, f"Issuance #{issuance.pk} marked received as {status.upper()}. Stock updated.")
+    return redirect('issuance_list')

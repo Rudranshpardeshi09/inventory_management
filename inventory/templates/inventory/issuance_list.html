@@ -1,0 +1,235 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+{% load tz %}
+
+{% block title %}Issuance / Return{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div class="container py-5">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold gradient-text">⚙️ Issue / Receive Components</h2>
+        <p class="text-muted">Issue components to users and record returns (status, receive date, remarks).</p>
+    </div>
+
+    <!-- Button to open Issue modal -->
+    <div class="mb-4 text-end">
+        <button class="btn btn-modern" data-bs-toggle="modal" data-bs-target="#issueModal">+ Issue Component</button>
+    </div>
+
+    <!-- Issuances Table -->
+    <div class="card p-3">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>S.no.</th>
+                        <th>Component</th>
+                        <th>Qty</th>
+                        <th>Issue Date</th>
+                        <th>User</th>
+                        <th>Receiver</th>
+                        <th>Receive Date</th>
+                        <th>Comp. Status</th>
+                        <th>Issuer</th>
+                        <th>Condition</th>
+                        <th>Remark</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for iss in issuances %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ iss.item.name }}</td>
+                        <td>{{ iss.quantity }}</td>
+                        <td>{{ iss.issue_date|localtime|date:"d-m-Y H:i" }}</td>
+                        <td>{{ iss.user }}</td>
+                        <td>{{ iss.receiver }}</td>
+                        <td>{% if iss.receive_date %}{{ iss.receive_date|localtime|date:"d-m-Y H:i" }}{% else %}-{% endif %}</td>
+                        <td>{{ iss.get_component_status_display }}</td>
+                        <td>{{ iss.get_issuer_display }}</td>
+                        <td>{{ iss.get_issue_condition_display }}</td>
+                        <td style="max-width:160px; white-space:pre-wrap;">{{ iss.remark }}</td>
+                        <td>
+                            {% if not iss.received %}
+                                <!-- mark received button opens receive modal -->
+                                <button class="btn btn-sm btn-success" data-bs-toggle="modal"
+                                        data-bs-target="#receiveModal"
+                                        data-issuance-id="{{ iss.pk }}"
+                                        data-item-name="{{ iss.item.name }}"
+                                        data-qty="{{ iss.quantity }}"
+                                        data-issuer="{{ iss.issuer }}">
+                                    Receive
+                                </button>
+                            {% else %}
+                                <span class="text-muted">Received</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="12" class="text-center text-muted">No issuance records yet</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Issue Modal -->
+<div class="modal fade" id="issueModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" action="{% url 'issue_item' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Issue Component</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Render fields manually for clarity -->
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Item</label>
+              <select name="item" class="form-select" required>
+                <option value="">Select item...</option>
+                {% for it in Item.objects.all %} {# if Item model imported in template context; else provide in view #}
+                <option value="{{ it.pk }}">{{ it.name }} (Available: {{ it.quantity }})</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Quantity</label>
+              <input type="number" name="quantity" min="1" class="form-control" required>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Issuer</label>
+              <select name="issuer" id="issuerSelect" class="form-select" required>
+                <option value="">Select issuer</option>
+                <option value="harsh">Harsh</option>
+                <option value="gaurav">Gaurav</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">User (who will use)</label>
+              <input type="text" name="user" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Receiver</label>
+              <select name="receiver" id="receiverSelect" class="form-select" required>
+                <option value="">Select receiver</option>
+                <option value="harsh">Harsh</option>
+                <option value="gaurav">Gaurav</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Issue Condition</label>
+              <select name="issue_condition" class="form-select" required>
+                <option value="returnable">Returnable</option>
+                <option value="non_returnable">Non-returnable</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Remark</label>
+              <input type="text" name="remark" class="form-control">
+            </div>
+          </div>
+          <p class="mt-3 text-muted small">Issue date is recorded automatically when you submit.</p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Issue</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Receive Modal -->
+<div class="modal fade" id="receiveModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'receive_item' %}">
+        {% csrf_token %}
+        <input type="hidden" name="issuance_id" id="recvIssuanceId">
+        <div class="modal-header">
+          <h5 class="modal-title">Receive Component</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p id="recvInfo"></p>
+          <div class="mb-3">
+            <label class="form-label">Component Status</label>
+            <select name="component_status" class="form-select" required>
+              <option value="ok">OK</option>
+              <option value="faulty">Faulty</option>
+              <option value="damaged">Damaged</option>
+              <option value="lost">Lost</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Remark (optional)</label>
+            <textarea name="remark" rows="3" class="form-control"></textarea>
+          </div>
+          <p class="text-muted small">Receive date will be recorded automatically when you submit.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Mark Received</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JS: ensure receiver is other person and fill receive modal -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const issuerSelect = document.getElementById('issuerSelect');
+    const receiverSelect = document.getElementById('receiverSelect');
+
+    function syncReceiver() {
+        if (!issuerSelect || !receiverSelect) return;
+        const issuer = issuerSelect.value;
+        if (issuer === 'harsh') {
+            receiverSelect.value = 'gaurav';
+            receiverSelect.querySelectorAll('option').forEach(o => {
+                o.disabled = (o.value !== 'gaurav' && o.value !== '');
+            });
+        } else if (issuer === 'gaurav') {
+            receiverSelect.value = 'harsh';
+            receiverSelect.querySelectorAll('option').forEach(o => {
+                o.disabled = (o.value !== 'harsh' && o.value !== '');
+            });
+        } else {
+            // enable all
+            receiverSelect.querySelectorAll('option').forEach(o => o.disabled = false);
+        }
+    }
+    issuerSelect && issuerSelect.addEventListener('change', syncReceiver);
+
+    // receive modal population
+    const receiveModal = document.getElementById('receiveModal');
+    receiveModal && receiveModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const issuanceId = button.getAttribute('data-issuance-id');
+        const itemName = button.getAttribute('data-item-name');
+        const qty = button.getAttribute('data-qty');
+        const issuer = button.getAttribute('data-issuer');
+
+        document.getElementById('recvIssuanceId').value = issuanceId;
+        document.getElementById('recvInfo').innerText = `Issuance #${issuanceId} — ${qty} × ${itemName} (issued by ${issuer})`;
+    });
+});
+</script>
+{% endblock %}

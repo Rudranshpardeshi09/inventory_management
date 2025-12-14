@@ -1,0 +1,456 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    /* Modern Color Palette */
+    :root {
+        --primary: #4361ee;
+        --secondary: #3f37c9;
+        --accent: #4cc9f0;
+        --success: #4ade80;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --light: #f8fafc;
+        --dark: #1e293b;
+        --gradient-primary: linear-gradient(135deg, #4361ee, #3a0ca3);
+        --gradient-warning: linear-gradient(135deg, #f59e0b, #d97706);
+        --gradient-danger: linear-gradient(135deg, #ef4444, #dc2626);
+        --gradient-success: linear-gradient(135deg, #10b981, #059669);
+        --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
+        --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+        --shadow-strong: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Smooth Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.4);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(67, 97, 238, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(67, 97, 238, 0);
+        }
+    }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Base Styles */
+    .fade-in {
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    .float-animation {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
+    .slide-in-right {
+        animation: slideInRight 0.6s ease-out;
+    }
+
+    .gradient-text {
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Enhanced Cards */
+    .stat-card {
+        border: none;
+        border-radius: 20px;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gradient-primary);
+        z-index: 2;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-12px) scale(1.02);
+        box-shadow: var(--shadow-strong);
+    }
+
+    .stat-card.warning::before {
+        background: var(--gradient-warning);
+    }
+
+    .stat-card.danger::before {
+        background: var(--gradient-danger);
+    }
+
+    .stat-card.success::before {
+        background: var(--gradient-success);
+    }
+
+    .card-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin-bottom: 15px;
+        position: relative;
+    }
+
+    .card-icon::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 18px;
+        opacity: 0.1;
+        background: inherit;
+    }
+
+    /* Modern Buttons */
+    .btn-modern {
+        border: none;
+        border-radius: 12px;
+        padding: 12px 28px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        background: var(--gradient-primary);
+        color: white;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .btn-modern::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-modern:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-medium);
+        color: white;
+    }
+
+    .btn-modern:hover::before {
+        left: 100%;
+    }
+
+    /* Enhanced Table */
+    .table-modern {
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: var(--shadow-soft);
+        border: none;
+    }
+
+    .table-modern thead {
+        background: var(--gradient-primary);
+    }
+
+    .table-modern thead th {
+        background: var(--dark);
+        border: none;
+        padding: 18px 16px;
+        font-weight: 600;
+        color: rgb(255, 255, 255);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .table-modern thead th::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .table-modern tbody tr {
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+    }
+
+    .table-modern tbody tr:hover {
+        transform: translateX(8px);
+        border-left: 3px solid var(--primary);
+        box-shadow: var(--shadow-soft);
+        background: white !important;
+    }
+
+    .table-modern tbody td {
+        padding: 16px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    /* Badge Styles */
+    .badge-modern {
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 0.85em;
+        box-shadow: var(--shadow-soft);
+    }
+
+    /* Pagination */
+    .pagination-modern .page-item .page-link {
+        border: none;
+        border-radius: 12px;
+        margin: 0 4px;
+        padding: 10px 18px;
+        font-weight: 600;
+        color: var(--dark);
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .pagination-modern .page-item.active .page-link {
+        background: var(--gradient-primary);
+        color: white;
+        transform: scale(1.1);
+    }
+
+    .pagination-modern .page-item .page-link:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    /* Background Elements */
+    .bg-blob {
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        filter: blur(40px);
+        opacity: 0.1;
+        z-index: 0;
+    }
+
+    .bg-blob-1 {
+        background: var(--primary);
+        top: 5%;
+        right: 5%;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .bg-blob-2 {
+        background: var(--accent);
+        bottom: 10%;
+        left: 5%;
+        animation: float 8s ease-in-out infinite reverse;
+    }
+</style>
+
+<div class="container py-5 position-relative overflow-hidden">
+    <!-- Background Elements -->
+    <div class="bg-blob bg-blob-1"></div>
+    <div class="bg-blob bg-blob-2"></div>
+
+    <!-- Title Section -->
+    <div class="text-center mb-5 fade-in">
+        <div class="float-animation mb-3">📦</div>
+        <h1 class="fw-bold gradient-text display-4 mb-3">
+            Inventory Dashboard
+        </h1>
+        <p class="text-muted fs-5">Track and manage your stock efficiently with real-time insights</p>
+    </div>
+
+
+    <!-- Summary Cards -->
+    <div class="row mb-5">
+        <div class="col-md-4 mb-4 fade-in" style="animation-delay: 0.1s;">
+            <div class="card stat-card p-4 border-0 h-100">
+                <div class="card-body text-center">
+                    <div class="card-icon mx-auto" style="background: var(--primary); color: white;">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <h6 class="text-muted mb-2">TOTAL ITEMS</h6>
+                    <h2 class="fw-bold mb-0" style="color: var(--primary);">{{ total_items }}</h2>
+                    <p class="text-muted mt-2">Items in inventory</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4 fade-in" style="animation-delay: 0.2s;">
+            <div class="card stat-card warning p-4 border-0 h-100">
+                <div class="card-body text-center">
+                    <div class="card-icon mx-auto" style="background: var(--warning); color: white;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h6 class="text-muted mb-2">LOW STOCK</h6>
+                    <h2 class="fw-bold mb-0" style="color: var(--warning);">{{ low_stock }}</h2>
+                    <p class="text-muted mt-2">Need reordering</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4 fade-in" style="animation-delay: 0.3s;">
+            <div class="card stat-card danger p-4 border-0 h-100">
+                <div class="card-body text-center">
+                    <div class="card-icon mx-auto" style="background: var(--danger); color: white;">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <h6 class="text-muted mb-2">OUT OF STOCK</h6>
+                    <h2 class="fw-bold mb-0" style="color: var(--danger);">{{ out_stock }}</h2>
+                    <p class="text-muted mt-2">Urgent attention needed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Button -->
+    <div class="text-end mb-4 slide-in-right">
+        <a href="{% url 'inventory_list' %}" class="btn btn-modern">
+            <i class="fas fa-list me-2"></i>View Full Inventory
+        </a>
+    </div>
+
+    <!-- Inventory Table -->
+    <div class="table-responsive fade-in" style="animation-delay: 0.4s;">
+        <table class="table table-modern table-hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Item Name</th>
+                    <th>Category</th>
+                    <th>Quantity</th>
+                    <th>Reorder Level</th>
+                    <th>Storage Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in page_obj %}
+                <tr
+                    class="{% if item.quantity == 0 %}table-danger{% elif item.quantity <= item.reorder_level %}table-warning{% endif %}">
+                    <td class="fw-bold text-muted">{{ forloop.counter }}</td>
+                    <td class="fw-semibold">{{ item.name }}</td>
+                    <td>
+                        <span class="badge badge-modern" style="background: var(--primary); color: #fff;">
+                            {{ item.category }}
+                        </span>
+                    </td>
+                    <td>
+                        <span
+                            class="fw-bold {% if item.quantity == 0 %}text-danger{% elif item.quantity <= item.reorder_level %}text-warning{% else %}text-success{% endif %}">
+                            {{ item.quantity }}
+                        </span>
+                    </td>
+                    <td class="fw-semibold">{{ item.reorder_level }}</td>
+                    <td>
+                        <i class="fas fa-map-marker-alt me-2 text-muted"></i>
+                        {{ item.storage_location }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <h5>No items available</h5>
+                            <p>Start by adding items to your inventory</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="d-flex justify-content-center mt-5 fade-in" style="animation-delay: 0.5s;">
+        <ul class="pagination pagination-modern">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                    <i class="fas fa-chevron-left me-1"></i>Previous
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <li class="page-item">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                        Next<i class="fas fa-chevron-right ms-1"></i>
+                    </a>
+                </li>
+                {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Font Awesome for Icons -->
+<script src="https://kit.fontawesome.com/your-kit-code.js" crossorigin="anonymous"></script>
+{% endblock %}
