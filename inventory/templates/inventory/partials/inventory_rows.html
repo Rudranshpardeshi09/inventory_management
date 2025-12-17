@@ -1,0 +1,77 @@
+{% for item in page_obj %}
+<tr class="
+    {% if item.quantity == 0 %}
+        row-out-stock
+    {% elif item.quantity <= item.reorder_level %}
+        row-low-stock
+    {% endif %}
+">
+    <td class="fw-bold text-muted">{{ item.serial_no }}</td>
+
+    <td class="item-name fw-semibold">{{ item.name }}</td>
+
+    <td class="item-category">
+        <span class="badge badge-modern badge-category">
+            {{ item.category }}
+        </span>
+    </td>
+
+    <td>
+        <span class="fw-bold
+            {% if item.quantity == 0 %}text-danger
+            {% elif item.quantity <= item.reorder_level %}text-warning
+            {% else %}text-success{% endif %}">
+            {{ item.quantity }}
+        </span>
+    </td>
+
+    <td class="fw-semibold">{{ item.reorder_level }}</td>
+
+    <td>
+        <i class="fas fa-location-dot me-2 text-muted"></i>
+        {{ item.storage_location }}
+    </td>
+
+    <!-- ✅ ALL ACTION BUTTONS -->
+    <td class="action-buttons">
+        <a href="{% url 'edit_item' item.id %}"
+           class="action-btn"
+           style="background: var(--primary);"
+           title="Edit Item">
+            <i class="fas fa-edit"></i>
+        </a>
+
+        <a href="{% url 'delete_item' item.id %}"
+           class="action-btn"
+           style="background: var(--danger);"
+           title="Delete Item"
+           onclick="return confirm('Are you sure you want to delete this item?')">
+            <i class="fas fa-trash"></i>
+        </a>
+
+        <a href="{% url 'add_stock' item.id %}"
+           class="action-btn"
+           style="background: var(--success);"
+           title="Add Stock">
+            <i class="fas fa-plus"></i>
+        </a>
+
+        <a href="{% url 'remove_stock' item.id %}"
+           class="action-btn"
+           style="background: var(--warning);"
+           title="Remove Stock">
+            <i class="fas fa-minus"></i>
+        </a>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="7">
+        <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <h4>No Matching Items</h4>
+            <p class="text-muted">Try a different keyword</p>
+        </div>
+    </td>
+</tr>
+{% endfor %}

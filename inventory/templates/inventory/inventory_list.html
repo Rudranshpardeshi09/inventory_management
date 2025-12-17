@@ -475,7 +475,8 @@
     </div>
 
     <!-- Search & Filter Card -->
-    <div class="search-filter-card fade-in-up" style="animation-delay: 0.1s;">
+
+    <!-- <div class="search-filter-card fade-in-up" style="animation-delay: 0.1s;">
         <div class="row g-3 align-items-center">
             <div class="col-md-6">
                 <div class="search-input-group">
@@ -495,7 +496,34 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
+    <form method="get" class="search-filter-card fade-in-up" style="animation-delay: 0.1s;">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-6">
+                <div class="search-input-group">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search items..."
+                        value="{{ query }}">
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="filter-select-group">
+                    <i class="fas fa-filter"></i>
+                    <select id="categoryFilter" class="form-select">
+                        <option value="">All Categories</option>
+                        {% for cat in CATEGORIES %}
+                        <option value="{{ cat }}" {% if cat == selected_category %}selected{% endif %}>
+                            {{ cat }}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                </div>
+            </div>
+        </div>
+    </form>
+
 
     <!-- Table Container -->
     <div class="action-card fade-in-up" style="animation-delay: 0.2s;">
@@ -524,7 +552,7 @@
                         <td class="fw-bold text-muted">{{ item.serial_no }}</td>
                         <td class="item-name fw-semibold">{{ item.name }}</td>
                         <td class="item-category">
-                            
+
                             <span class="badge badge-modern badge-category">
                                 {{ item.category }}
                             </span>
@@ -541,7 +569,7 @@
                         <td class="fw-semibold">{{ item.reorder_level }}</td>
                         <td>
                             <i class="fas fa-location-dot me-2 text-muted"></i>
-                            {{ item.storage_location }}
+                            {{ item.location }}
                         </td>
                         <td class="action-buttons">
                             <a href="{% url 'edit_item' item.id %}" class="action-btn"
@@ -587,122 +615,110 @@
     <div class="d-flex justify-content-center mt-5 fade-in-up" style="animation-delay: 0.4s;">
         <nav>
             <ul class="pagination pagination-modern">
+
                 {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                    <a class="page-link"
+                        href="?page={{ page_obj.previous_page_number }}&q={{ query }}&category={{ selected_category }}">
                         <i class="fas fa-chevron-left me-1"></i>Previous
                     </a>
                 </li>
                 {% endif %}
 
                 {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
+                {% if num == page_obj.number %}
                 <li class="page-item active">
                     <span class="page-link">{{ num }}</span>
                 </li>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <li class="page-item">
-                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                {% elif num > page_obj.number|add:'-7' and num < page_obj.number|add:'7' %} <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}&q={{ query }}&category={{ selected_category }}">
+                        {{ num }}
+                    </a>
                     </li>
                     {% endif %}
                     {% endfor %}
 
                     {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                        <a class="page-link"
+                            href="?page={{ page_obj.next_page_number }}&q={{ query }}&category={{ selected_category }}">
                             Next<i class="fas fa-chevron-right ms-1"></i>
                         </a>
                     </li>
                     {% endif %}
+
             </ul>
         </nav>
     </div>
     {% endif %}
+
 </div>
 
-<!-- Enhanced JavaScript for Search & Filter -->
-<!-- Enhanced JavaScript for Universal Search & Filter -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
+<!-- <script>
+    document.addEventListener("DOMContentLoaded", function () {
         const searchInput = document.getElementById("searchInput");
         const categoryFilter = document.getElementById("categoryFilter");
-        const tableRows = document.querySelectorAll("#inventoryTable tbody tr");
 
-        function filterTable() {
-            const searchValue = searchInput.value.toLowerCase().trim();
-            const categoryValue = categoryFilter.value.toLowerCase().trim();
+        let debounceTimer = null;
 
-            tableRows.forEach(row => {
-                // Skip empty state row
-                if (row.querySelector('.empty-state')) return;
+        function applyFilters() {
+            const params = new URLSearchParams(window.location.search);
 
-                // Get full text content of the entire row
-                const rowText = row.innerText.toLowerCase();
+            const query = searchInput.value.trim();
+            const category = categoryFilter.value;
 
-                // Get category text (for dropdown filtering)
-                const itemCategory = row.querySelector(".item-category")?.textContent.toLowerCase().trim() || "";
+            if (query) params.set("q", query);
+            else params.delete("q");
 
-                const matchesSearch = rowText.includes(searchValue);
-                const matchesCategory = categoryValue === "" || itemCategory.includes(categoryValue);
+            if (category) params.set("category", category);
+            else params.delete("category");
 
-                if (matchesSearch && matchesCategory) {
-                    row.style.display = "";
-                    row.style.animation = "fadeInUp 0.5s ease-out";
-                } else {
-                    row.style.display = "none";
-                }
-            });
+            params.delete("page"); // reset pagination
 
-            // Handle "No results" message
-            const visibleRows = Array.from(tableRows).filter(row => row.style.display !== 'none');
-            let noResultsRow = document.querySelector('.no-results-row');
-
-            if (visibleRows.length === 0 && tableRows.length > 0) {
-                if (!noResultsRow) {
-                    noResultsRow = document.createElement('tr');
-                    noResultsRow.className = 'no-results-row';
-                    noResultsRow.innerHTML = `
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <i class="fas fa-search"></i>
-                                <h4 class="mb-3">No Matching Items</h4>
-                                <p class="text-muted">Try adjusting your search or filter criteria</p>
-                            </div>
-                        </td>
-                    `;
-                    document.querySelector('#inventoryTable tbody').appendChild(noResultsRow);
-                }
-                noResultsRow.style.display = '';
-            } else if (noResultsRow) {
-                noResultsRow.style.display = 'none';
-            }
+            window.location.search = params.toString();
         }
 
-        // Debounced search for smoother typing
-        let searchTimeout;
-        searchInput.addEventListener("input", function () {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(filterTable, 300);
+        searchInput.addEventListener("input", () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(applyFilters, 1000);
         });
 
-        categoryFilter.addEventListener("change", filterTable);
-
-        // Add loading animation to buttons
-        document.querySelectorAll('.btn-modern, .action-btn').forEach(btn => {
-            btn.addEventListener('click', function (e) {
-                if (!this.href) return;
-
-                const originalContent = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Loading...';
-                this.style.pointerEvents = 'none';
-
-                setTimeout(() => {
-                    this.innerHTML = originalContent;
-                    this.style.pointerEvents = 'auto';
-                }, 2000);
-            });
-        });
+        categoryFilter.addEventListener("change", applyFilters);
     });
+</script> -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("searchInput");
+    const categoryFilter = document.getElementById("categoryFilter");
+    const tableBody = document.querySelector("#inventoryTable tbody");
+
+    let debounceTimer = null;
+
+    function liveSearch() {
+        const query = searchInput.value.trim();
+        const category = categoryFilter.value;
+
+        fetch(`/inventory/live-search/?q=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`)
+            .then(res => res.json())
+            .then(data => {
+                tableBody.innerHTML = data.html;
+
+                // 🔑 KEEP CURSOR WHERE IT IS
+                searchInput.focus();
+            });
+    }
+
+    searchInput.addEventListener("input", function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(liveSearch, 300);
+    });
+
+    categoryFilter.addEventListener("change", liveSearch);
+});
 </script>
+
+
 
 
 {% endblock %}
