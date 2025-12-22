@@ -49,19 +49,6 @@ class Item(models.Model):
 
         super().save(*args, **kwargs)
 
-    def assign_box(self, letter):
-        if letter in ['a', 'b', 'c', 'd', 'e', 'f']:
-            return "A1"
-        elif letter in ['g', 'h', 'i', 'j', 'k']:
-            return "B2"
-        elif letter in ['l', 'm', 'n', 'o', 'p']:
-            return "C3"
-        elif letter in ['q', 'r', 's', 't', 'u']:
-            return "D4"
-        elif letter in ['v', 'w', 'x', 'y', 'z']:
-            return "E5"
-        else:
-            return None  # fallback for non-alphabetic names
 
 
     def stock_status(self):
