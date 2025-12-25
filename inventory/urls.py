@@ -19,6 +19,9 @@ urlpatterns = [
 
     # Transactions
     path('transactions/', views.transaction_history, name='transaction_history'),
+    path(
+    "transactions/live-search/",views.transaction_history,name="transaction_history"),
+
 
     # inssuances
     path('issuances/', views.issuance_list, name='issuance_list'),

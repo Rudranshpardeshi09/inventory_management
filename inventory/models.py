@@ -24,29 +24,7 @@ class Item(models.Model):
     
     is_imported = models.BooleanField(default=False) # To track if the item was imported via CSV
 
-    def save(self, *args, **kwargs):     
-        # ✅ Handle custom category
-        if self.category == 'Other' and self.custom_category:
-            self.category = self.custom_category
-
-        # ✅ Serial number logic
-        if not self.serial_no:
-            last_item = Item.objects.order_by('-serial_no').first()
-            self.serial_no = (last_item.serial_no + 1) if last_item and last_item.serial_no else 1
-
-        # ✅ Assign or update box (storage_location)
-        if self.name:
-            first_letter = self.name[0].lower()
-            new_box = self.assign_box(first_letter)
-
-            # Only update box if name changed or item is new
-            if self.pk:
-                old_item = Item.objects.filter(pk=self.pk).first()
-                if old_item and old_item.name != self.name:
-                    self.storage_location = new_box
-            else:
-                self.storage_location = new_box
-
+    def save(self, *args, **kwargs):    
         super().save(*args, **kwargs)
 
 

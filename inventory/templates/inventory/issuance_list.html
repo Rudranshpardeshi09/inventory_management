@@ -7,109 +7,517 @@
 {% block content %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+<style>
+  :root {
+    --primary: #4361ee;
+    --secondary: #3a0ca3;
+    --success: #4cc9a7;
+    --warning: #f7a900;
+    --danger: #f72585;
+    --info: #4cc9f0;
+    --dark: #1a1a2e;
+    --light: #f8f9fa;
+    --gradient-primary: linear-gradient(135deg, #4361ee, #3a0ca3);
+    --gradient-success: linear-gradient(135deg, #4cc9a7, #38b2ac);
+    --gradient-warning: linear-gradient(135deg, #f7a900, #f48c06);
+    --gradient-danger: linear-gradient(135deg, #f72585, #b5179e);
+    --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+    --shadow-strong: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+
+    50% {
+      transform: scale(1.05);
+    }
+
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200px 0;
+    }
+
+    100% {
+      background-position: 200px 0;
+    }
+  }
+
+  /* Base Styles */
+  .fade-in-up {
+    .fade-in-up {
+    animation-delay: calc(var(--i) * 100ms);
+}
+
+  }
+
+  .slide-in-right {
+    animation: slideInRight 0.8s ease-out;
+  }
+
+  .pulse-hover:hover {
+    animation: pulse 0.6s ease-in-out;
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #fff, #e0f7ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    position: relative;
+  }
+
+  /* Enhanced Cards */
+  .card-enhanced {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    box-shadow: var(--shadow-strong);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+  }
+
+  .card-enhanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-primary);
+  }
+
+  /* Modern Buttons */
+  .btn-modern {
+    border: none;
+    border-radius: 16px;
+    padding: 14px 32px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-medium);
+    background: var(--gradient-primary);
+    color: white;
+  }
+
+  .btn-modern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+  }
+
+  .btn-modern:hover::before {
+    left: 100%;
+  }
+
+  .btn-modern:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-strong);
+    color: white;
+  }
+
+  /* Enhanced Table */
+  .table-enhanced {
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+    border: none;
+    background: white;
+  }
+
+  .table-enhanced thead {
+    background: var(--gradient-primary);
+  }
+
+  .table-enhanced thead th {
+    border: none;
+    padding: 18px 12px;
+    font-weight: 600;
+    color: white;
+    text-align: center;
+    font-size: 0.9rem;
+    position: relative;
+  }
+
+  .table-enhanced thead th::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .table-enhanced tbody tr {
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+  }
+
+  .table-enhanced tbody tr:hover {
+    transform: translateX(5px);
+    border-left: 3px solid var(--primary);
+    background: rgba(67, 97, 238, 0.02);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .table-enhanced tbody td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 0.9rem;
+  }
+
+  /* Status Badges */
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.8rem;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .status-ok {
+    background: var(--gradient-success);
+    color: white;
+  }
+
+  .status-faulty {
+    background: var(--gradient-warning);
+    color: white;
+  }
+
+  .status-damaged {
+    background: var(--gradient-danger);
+    color: white;
+  }
+
+  .status-lost {
+    background: #6c757d;
+    color: white;
+  }
+
+  .status-returnable {
+    background: #20c997;
+    color: white;
+  }
+
+  .status-non-returnable {
+    background: #fd7e14;
+    color: white;
+  }
+
+  /* Action Buttons */
+  .action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2px;
+    transition: all 0.3s ease;
+    border: none;
+    color: white;
+    font-size: 0.9rem;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .action-btn:hover {
+    transform: translateY(-2px) scale(1.1);
+    color: white;
+  }
+
+  /* Modal Enhancements */
+  .modal-enhanced .modal-content {
+    border-radius: 24px;
+    border: none;
+    box-shadow: var(--shadow-strong);
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+  }
+
+  .modal-enhanced .modal-header {
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 24px 24px 0 0;
+    padding: 20px 30px;
+    border-bottom: none;
+  }
+
+  .modal-enhanced .modal-title {
+    font-weight: 600;
+    font-size: 1.3rem;
+  }
+
+  .modal-enhanced .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+    transition: all 0.3s ease;
+  }
+
+  .modal-enhanced .btn-close:hover {
+    opacity: 1;
+    transform: rotate(90deg);
+  }
+
+  .modal-enhanced .modal-body {
+    padding: 30px;
+  }
+
+  /* Form Controls */
+  .form-control-enhanced {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .form-control-enhanced:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    background: white;
+  }
+
+  /* Empty State */
+  .empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: #6c757d;
+  }
+
+  .empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .container {
+      padding: 20px;
+    }
+
+    .table-responsive {
+      margin: 0 -15px;
+      padding: 0 15px;
+    }
+
+    .table-enhanced thead th,
+    .table-enhanced tbody td {
+      padding: 10px 8px;
+      font-size: 0.85rem;
+    }
+  }
+
+  /* Status Colors for Table Cells */
+  .cell-ok {
+    background: rgba(76, 201, 167, 0.1);
+  }
+
+  .cell-faulty {
+    background: rgba(247, 169, 0, 0.1);
+  }
+
+  .cell-damaged {
+    background: rgba(247, 37, 133, 0.1);
+  }
+
+  .cell-lost {
+    background: rgba(108, 117, 125, 0.1);
+  }
+</style>
+
 <div class="container py-5">
-    <div class="text-center mb-4">
-        <h2 class="fw-bold gradient-text">⚙️ Issue / Receive Components</h2>
-        <p class="text-muted">Issue components to users and record returns (status, receive date, remarks).</p>
-    </div>
+  <!-- Page Header -->
+  <div class="text-center mb-5 fade-in-up">
+    <h1 class="gradient-text text-dark fw-bold display-5 mb-3">
+      <i class="fas fa-exchange-alt me-3"></i>Issue & Return Management
+    </h1>
+    <p class="text-dark fs-5">Track component issuance, returns, and condition status</p>
+  </div>
 
-    <!-- Button to open Issue modal -->
-    <div class="mb-4 text-end">
-        <button class="btn btn-modern" data-bs-toggle="modal" data-bs-target="#issueModal">+ Issue Component</button>
-    </div>
+  <!-- Action Button -->
+  <div class="text-end mb-4 slide-in-right">
+    <button class="btn btn-modern pulse-hover" data-bs-toggle="modal" data-bs-target="#issueModal">
+      <i class="fas fa-paper-plane me-2"></i>Issue Component
+    </button>
+  </div>
 
-    <!-- Issuances Table -->
-    <div class="card p-3">
-        <div class="table-responsive">
-            <table class="table table-striped align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>S.no.</th>
-                        <th>Component</th>
-                        <th>Qty</th>
-                        <th>Issue Date</th>
-                        <th>User</th>
-                        <th>Receiver</th>
-                        <th>Receive Date</th>
-                        <th>Comp. Status</th>
-                        <th>Issuer</th>
-                        <th>Condition</th>
-                        <th>Remark</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for iss in issuances %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ iss.item.name }}</td>
-                        <td>{{ iss.quantity }}</td>
-                        <td>{{ iss.issue_date|localtime|date:"d-m-Y H:i" }}</td>
-                        <td>{{ iss.user }}</td>
-                        <td>{{ iss.receiver }}</td>
-                        <td>{% if iss.receive_date %}{{ iss.receive_date|localtime|date:"d-m-Y H:i" }}{% else %}-{% endif %}</td>
-                        <td>{{ iss.get_component_status_display }}</td>
-                        <td>{{ iss.get_issuer_display }}</td>
-                        <td>{{ iss.get_issue_condition_display }}</td>
-                        <td style="max-width:160px; white-space:pre-wrap;">{{ iss.remark }}</td>
-                        <td>
-                            {% if not iss.received %}
-                                <!-- mark received button opens receive modal -->
-                                <button class="btn btn-sm btn-success" data-bs-toggle="modal"
-                                        data-bs-target="#receiveModal"
-                                        data-issuance-id="{{ iss.pk }}"
-                                        data-item-name="{{ iss.item.name }}"
-                                        data-qty="{{ iss.quantity }}"
-                                        data-issuer="{{ iss.issuer }}">
-                                    Receive
-                                </button>
-                            {% else %}
-                                <span class="text-muted">Received</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="12" class="text-center text-muted">No issuance records yet</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  <!-- Issuances Table -->
+  <div class="card-enhanced p-4 fade-in-up" style="animation-delay: 0.1s;">
+    <div class="table-responsive">
+      <table class="table table-enhanced">
+        <thead>
+          <tr>
+            <th><i class="fas fa-hashtag"></i></th>
+            <th><i class="fas fa-cube"></i> Component</th>
+            <th><i class="fas fa-boxes"></i> Qty</th>
+            <th><i class="fas fa-calendar-alt"></i> Issue Date</th>
+            <th><i class="fas fa-user"></i> User</th>
+            <th><i class="fas fa-user-check"></i> Receiver</th>
+            <th><i class="fas fa-calendar-check"></i> Receive Date</th>
+            <th><i class="fas fa-tasks"></i> Status</th>
+            <th><i class="fas fa-user-tie"></i> Issuer</th>
+            <th><i class="fas fa-clipboard-check"></i> Condition</th>
+            <th><i class="fas fa-comment"></i> Remark</th>
+            <th><i class="fas fa-cogs"></i> Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for iss in issuances %}
+          <tr class="fade-in-up" data-index="{{ forloop.counter }}">
+            <td class="fw-bold text-muted">{{ forloop.counter }}</td>
+            <td class="fw-semibold">{{ iss.item.name }}</td>
+            <td>
+              <span class="badge bg-primary rounded-pill px-3 py-2">
+                {{ iss.quantity }}
+              </span>
+            </td>
+            <td class="text-nowrap">{{ iss.issue_date|localtime|date:"d M Y, H:i" }}</td>
+            <td>{{ iss.user }}</td>
+            <td>{{ iss.receiver|title }}</td>
+            <td>
+              {% if iss.receive_date %}
+              <span class="text-success fw-semibold">
+                {{ iss.receive_date|localtime|date:"d M Y, H:i" }}
+              </span>
+              {% else %}
+              <span class="text-warning">-</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="status-badge status-{{ iss.component_status }}">
+                {{ iss.get_component_status_display }}
+              </span>
+            </td>
+            <td>{{ iss.get_issuer_display|title }}</td>
+            <td>
+              <span class="status-badge status-{{ iss.issue_condition }}">
+                {{ iss.get_issue_condition_display }}
+              </span>
+            </td>
+            <td style="max-width: 160px; white-space: pre-wrap; word-break: break-word;">
+              {% if iss.remark %}
+              <span class="text-muted small">{{ iss.remark|truncatechars:30 }}</span>
+              {% else %}
+              <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if not iss.received %}
+              <button class="action-btn" style="background: var(--success);" data-bs-toggle="modal"
+                data-bs-target="#receiveModal" data-issuance-id="{{ iss.pk }}" data-item-name="{{ iss.item.name }}"
+                data-qty="{{ iss.quantity }}" data-issuer="{{ iss.issuer }}" title="Mark as Received">
+                <i class="fas fa-check"></i>
+              </button>
+              {% else %}
+              <span class="text-success fw-semibold"><i class="fas fa-check-circle"></i> Received</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="12">
+              <div class="empty-state">
+                <i class="fas fa-exchange-alt"></i>
+                <h4 class="mb-3">No Issuance Records</h4>
+                <p class="text-muted">Start by issuing components to users</p>
+                <button class="btn btn-modern mt-3" data-bs-toggle="modal" data-bs-target="#issueModal">
+                  <i class="fas fa-plus me-2"></i>Issue First Component
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </div>
 </div>
 
 <!-- Issue Modal -->
-<div class="modal fade" id="issueModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-enhanced" id="issueModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <form method="post" action="{% url 'issue_item' %}">
         {% csrf_token %}
         <div class="modal-header">
-          <h5 class="modal-title">Issue Component</h5>
+          <h5 class="modal-title">
+            <i class="fas fa-paper-plane me-2"></i>Issue Component
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <!-- Render fields manually for clarity -->
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label">Item</label>
-              <select name="item" class="form-select" required>
+              <label class="form-label fw-semibold">
+                <i class="fas fa-cube me-2 text-primary"></i>Item
+              </label>
+              <select name="item" class="form-control-enhanced select-enhanced" required>
                 <option value="">Select item...</option>
-                {% for it in Item.objects.all %} {# if Item model imported in template context; else provide in view #}
+                {% for it in Item.objects.all %}
                 <option value="{{ it.pk }}">{{ it.name }} (Available: {{ it.quantity }})</option>
                 {% endfor %}
               </select>
             </div>
 
             <div class="col-md-3">
-              <label class="form-label">Quantity</label>
-              <input type="number" name="quantity" min="1" class="form-control" required>
+              <label class="form-label fw-semibold">
+                <i class="fas fa-boxes me-2 text-success"></i>Quantity
+              </label>
+              <input type="number" name="quantity" min="1" class="form-control-enhanced" required>
             </div>
 
             <div class="col-md-3">
-              <label class="form-label">Issuer</label>
-              <select name="issuer" id="issuerSelect" class="form-select" required>
+              <label class="form-label fw-semibold">
+                <i class="fas fa-user-tie me-2 text-warning"></i>Issuer
+              </label>
+              <select name="issuer" id="issuerSelect" class="form-control-enhanced" required>
                 <option value="">Select issuer</option>
                 <option value="harsh">Harsh</option>
                 <option value="gaurav">Gaurav</option>
@@ -117,13 +525,17 @@
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">User (who will use)</label>
-              <input type="text" name="user" class="form-control" required>
+              <label class="form-label fw-semibold">
+                <i class="fas fa-user me-2 text-info"></i>User (who will use)
+              </label>
+              <input type="text" name="user" class="form-control-enhanced" required>
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">Receiver</label>
-              <select name="receiver" id="receiverSelect" class="form-select" required>
+              <label class="form-label fw-semibold">
+                <i class="fas fa-user-check me-2 text-secondary"></i>Receiver
+              </label>
+              <select name="receiver" id="receiverSelect" class="form-control-enhanced" required>
                 <option value="">Select receiver</option>
                 <option value="harsh">Harsh</option>
                 <option value="gaurav">Gaurav</option>
@@ -131,24 +543,35 @@
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">Issue Condition</label>
-              <select name="issue_condition" class="form-select" required>
+              <label class="form-label fw-semibold">
+                <i class="fas fa-clipboard-check me-2 text-primary"></i>Issue Condition
+              </label>
+              <select name="issue_condition" class="form-control-enhanced" required>
                 <option value="returnable">Returnable</option>
                 <option value="non_returnable">Non-returnable</option>
               </select>
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">Remark</label>
-              <input type="text" name="remark" class="form-control">
+              <label class="form-label fw-semibold">
+                <i class="fas fa-comment me-2 text-muted"></i>Remark
+              </label>
+              <input type="text" name="remark" class="form-control-enhanced">
             </div>
           </div>
-          <p class="mt-3 text-muted small">Issue date is recorded automatically when you submit.</p>
+          <p class="mt-3 text-muted small">
+            <i class="fas fa-info-circle me-1"></i>
+            Issue date is recorded automatically when you submit.
+          </p>
         </div>
 
         <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Issue</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-modern" style="background: var(--gradient-success);">
+            <i class="fas fa-paper-plane me-2"></i>Issue Component
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
         </div>
       </form>
     </div>
@@ -156,71 +579,95 @@
 </div>
 
 <!-- Receive Modal -->
-<div class="modal fade" id="receiveModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-enhanced" id="receiveModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <form method="post" action="{% url 'receive_item' %}">
         {% csrf_token %}
         <input type="hidden" name="issuance_id" id="recvIssuanceId">
         <div class="modal-header">
-          <h5 class="modal-title">Receive Component</h5>
+          <h5 class="modal-title">
+            <i class="fas fa-check-circle me-2"></i>Receive Component
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p id="recvInfo"></p>
-          <div class="mb-3">
-            <label class="form-label">Component Status</label>
-            <select name="component_status" class="form-select" required>
-              <option value="ok">OK</option>
-              <option value="faulty">Faulty</option>
-              <option value="damaged">Damaged</option>
-              <option value="lost">Lost</option>
+          <div class="alert alert-info border-0 rounded-3 mb-4" style="background: rgba(67, 97, 238, 0.1);">
+            <div id="recvInfo" class="fw-semibold"></div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-tasks me-2 text-primary"></i>Component Status
+            </label>
+            <select name="component_status" class="form-control-enhanced" required>
+              <option value="ok" class="text-success">✓ OK (Fully Functional)</option>
+              <option value="faulty" class="text-warning">⚠️ Faulty (Minor Issues)</option>
+              <option value="damaged" class="text-danger">✗ Damaged (Major Issues)</option>
+              <option value="lost" class="text-secondary">🗙 Lost (Not Returned)</option>
             </select>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Remark (optional)</label>
-            <textarea name="remark" rows="3" class="form-control"></textarea>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-comment-dots me-2 text-muted"></i>Remarks (optional)
+            </label>
+            <textarea name="remark" rows="3" class="form-control-enhanced"
+              placeholder="Add any additional notes about the component condition..."></textarea>
           </div>
-          <p class="text-muted small">Receive date will be recorded automatically when you submit.</p>
+
+          <p class="text-muted small">
+            <i class="fas fa-info-circle me-1"></i>
+            Receive date will be recorded automatically when you submit.
+          </p>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Mark Received</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-modern" style="background: var(--gradient-success);">
+            <i class="fas fa-check me-2"></i>Mark as Received
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
-<!-- JS: ensure receiver is other person and fill receive modal -->
+<!-- Enhanced JavaScript -->
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('DOMContentLoaded', function () {
     const issuerSelect = document.getElementById('issuerSelect');
     const receiverSelect = document.getElementById('receiverSelect');
 
+    // Sync issuer and receiver
     function syncReceiver() {
-        if (!issuerSelect || !receiverSelect) return;
-        const issuer = issuerSelect.value;
-        if (issuer === 'harsh') {
-            receiverSelect.value = 'gaurav';
-            receiverSelect.querySelectorAll('option').forEach(o => {
-                o.disabled = (o.value !== 'gaurav' && o.value !== '');
-            });
-        } else if (issuer === 'gaurav') {
-            receiverSelect.value = 'harsh';
-            receiverSelect.querySelectorAll('option').forEach(o => {
-                o.disabled = (o.value !== 'harsh' && o.value !== '');
-            });
-        } else {
-            // enable all
-            receiverSelect.querySelectorAll('option').forEach(o => o.disabled = false);
-        }
+      if (!issuerSelect || !receiverSelect) return;
+      const issuer = issuerSelect.value;
+      if (issuer === 'harsh') {
+        receiverSelect.value = 'gaurav';
+        receiverSelect.querySelectorAll('option').forEach(o => {
+          o.disabled = (o.value !== 'gaurav' && o.value !== '');
+        });
+      } else if (issuer === 'gaurav') {
+        receiverSelect.value = 'harsh';
+        receiverSelect.querySelectorAll('option').forEach(o => {
+          o.disabled = (o.value !== 'harsh' && o.value !== '');
+        });
+      } else {
+        receiverSelect.querySelectorAll('option').forEach(o => o.disabled = false);
+      }
     }
-    issuerSelect && issuerSelect.addEventListener('change', syncReceiver);
 
-    // receive modal population
+    if (issuerSelect) {
+      issuerSelect.addEventListener('change', syncReceiver);
+      syncReceiver(); // Initial sync
+    }
+
+    // Receive modal population
     const receiveModal = document.getElementById('receiveModal');
-    receiveModal && receiveModal.addEventListener('show.bs.modal', function (event) {
+    if (receiveModal) {
+      receiveModal.addEventListener('show.bs.modal', function (event) {
         const button = event.relatedTarget;
         const issuanceId = button.getAttribute('data-issuance-id');
         const itemName = button.getAttribute('data-item-name');
@@ -228,8 +675,45 @@ document.addEventListener('DOMContentLoaded', function () {
         const issuer = button.getAttribute('data-issuer');
 
         document.getElementById('recvIssuanceId').value = issuanceId;
-        document.getElementById('recvInfo').innerText = `Issuance #${issuanceId} — ${qty} × ${itemName} (issued by ${issuer})`;
+        document.getElementById('recvInfo').innerHTML = `
+                <i class="fas fa-tag me-1"></i><strong>Issuance #${issuanceId}</strong><br>
+                <i class="fas fa-cube me-1"></i>${itemName} <span class="badge bg-primary ms-2">${qty} units</span><br>
+                <i class="fas fa-user-tie me-1"></i>Issued by: ${issuer}
+            `;
+      });
+    }
+
+    // Add animation to table rows on load
+    const tableRows = document.querySelectorAll('.table-enhanced tbody tr');
+    tableRows.forEach((row, index) => {
+      row.style.animationDelay = `${index * 100}ms`;
     });
-});
+
+    // Add form validation feedback
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+      form.addEventListener('submit', function (e) {
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+
+        // Add loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        submitBtn.disabled = true;
+
+        // Re-enable after 3 seconds in case submission fails
+        setTimeout(() => {
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+        }, 3000);
+      });
+    });
+
+    // Enhance select elements
+    const selects = document.querySelectorAll('select');
+    selects.forEach(select => {
+      select.classList.add('form-control-enhanced');
+    });
+  });
 </script>
+
 {% endblock %}
