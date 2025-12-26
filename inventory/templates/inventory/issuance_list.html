@@ -79,8 +79,8 @@
   /* Base Styles */
   .fade-in-up {
     .fade-in-up {
-    animation-delay: calc(var(--i) * 100ms);
-}
+      animation-delay: calc(var(--i) * 100ms);
+    }
 
   }
 
@@ -162,7 +162,7 @@
     overflow: hidden;
     box-shadow: var(--shadow-soft);
     border: none;
-    background: white;
+    background: rgb(0, 98, 122);
   }
 
   .table-enhanced thead {
@@ -173,7 +173,7 @@
     border: none;
     padding: 18px 12px;
     font-weight: 600;
-    color: white;
+    color: rgb(0, 0, 0);
     text-align: center;
     font-size: 0.9rem;
     position: relative;
@@ -384,16 +384,19 @@
   <!-- Action Button -->
   <div class="text-end mb-4 slide-in-right">
     <button class="btn btn-modern pulse-hover" data-bs-toggle="modal" data-bs-target="#issueModal">
-      <i class="fas fa-paper-plane me-2"></i>Issue Component
+      <a href="{% url 'issue_item' %}" class="btn btn-primary mb-3">
+        <i class="fas fa-plus me-2"></i>Issue Component
+        <!-- <i class="fas fa-paper-plane me-2"></i>Issue Component -->
     </button>
+    </a>
   </div>
 
   <!-- Issuances Table -->
   <div class="card-enhanced p-4 fade-in-up" style="animation-delay: 0.1s;">
     <div class="table-responsive">
       <table class="table table-enhanced">
-        <thead>
-          <tr>
+        <thead >
+          <tr >
             <th><i class="fas fa-hashtag"></i></th>
             <th><i class="fas fa-cube"></i> Component</th>
             <th><i class="fas fa-boxes"></i> Qty</th>
@@ -486,25 +489,27 @@
     <div class="modal-content">
       <form method="post" action="{% url 'issue_item' %}">
         {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="fas fa-paper-plane me-2"></i>Issue Component
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="text-end mb-4 slide-in-right">
+          <button class="btn btn-primary btn-modern pulse-hover" data-bs-toggle="modal" data-bs-target="#issueModal">
+            <i class="fas fa-plus me-2"></i>Issue Component
+          </button>
         </div>
         <div class="modal-body">
           <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-md-6 position-relative">
               <label class="form-label fw-semibold">
                 <i class="fas fa-cube me-2 text-primary"></i>Item
               </label>
-              <select name="item" class="form-control-enhanced select-enhanced" required>
-                <option value="">Select item...</option>
-                {% for it in Item.objects.all %}
-                <option value="{{ it.pk }}">{{ it.name }} (Available: {{ it.quantity }})</option>
-                {% endfor %}
-              </select>
+
+              <input type="hidden" name="item_id" id="itemId">
+
+              <input type="text" id="itemSearch" class="form-control-enhanced"
+                placeholder="Start typing item name (e.g. 330 Ω)" autocomplete="off" required>
+
+              <div id="itemSuggestions" class="list-group position-absolute w-100 shadow"
+                style="z-index:1000; display:none;"></div>
             </div>
+
 
             <div class="col-md-3">
               <label class="form-label fw-semibold">
@@ -636,84 +641,66 @@
 
 <!-- Enhanced JavaScript -->
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const issuerSelect = document.getElementById('issuerSelect');
-    const receiverSelect = document.getElementById('receiverSelect');
+const searchInput = document.getElementById("itemSearch");
+const suggestionsBox = document.getElementById("itemSuggestions");
+const hiddenItemId = document.getElementById("itemId");
 
-    // Sync issuer and receiver
-    function syncReceiver() {
-      if (!issuerSelect || !receiverSelect) return;
-      const issuer = issuerSelect.value;
-      if (issuer === 'harsh') {
-        receiverSelect.value = 'gaurav';
-        receiverSelect.querySelectorAll('option').forEach(o => {
-          o.disabled = (o.value !== 'gaurav' && o.value !== '');
-        });
-      } else if (issuer === 'gaurav') {
-        receiverSelect.value = 'harsh';
-        receiverSelect.querySelectorAll('option').forEach(o => {
-          o.disabled = (o.value !== 'harsh' && o.value !== '');
-        });
-      } else {
-        receiverSelect.querySelectorAll('option').forEach(o => o.disabled = false);
-      }
+let debounceTimer = null;
+
+if (searchInput) {
+  searchInput.addEventListener("input", function () {
+    clearTimeout(debounceTimer);
+    const query = this.value.trim();
+
+    hiddenItemId.value = "";
+
+    if (query.length < 2) {
+      suggestionsBox.style.display = "none";
+      return;
     }
 
-    if (issuerSelect) {
-      issuerSelect.addEventListener('change', syncReceiver);
-      syncReceiver(); // Initial sync
-    }
+    debounceTimer = setTimeout(() => {
+      fetch(`/items/autocomplete/?q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(items => {
+          suggestionsBox.innerHTML = "";
+          if (!items.length) {
+            suggestionsBox.style.display = "none";
+            return;
+          }
 
-    // Receive modal population
-    const receiveModal = document.getElementById('receiveModal');
-    if (receiveModal) {
-      receiveModal.addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget;
-        const issuanceId = button.getAttribute('data-issuance-id');
-        const itemName = button.getAttribute('data-item-name');
-        const qty = button.getAttribute('data-qty');
-        const issuer = button.getAttribute('data-issuer');
-
-        document.getElementById('recvIssuanceId').value = issuanceId;
-        document.getElementById('recvInfo').innerHTML = `
-                <i class="fas fa-tag me-1"></i><strong>Issuance #${issuanceId}</strong><br>
-                <i class="fas fa-cube me-1"></i>${itemName} <span class="badge bg-primary ms-2">${qty} units</span><br>
-                <i class="fas fa-user-tie me-1"></i>Issued by: ${issuer}
+          items.forEach(item => {
+            const el = document.createElement("div");
+            el.className = "list-group-item list-group-item-action";
+            el.innerHTML = `
+              <strong>${item.name}</strong>
+              <small class="text-muted ms-2">
+                (${item.category}) • Available: ${item.quantity}
+              </small>
             `;
-      });
-    }
+            el.onclick = () => {
+              searchInput.value = item.name;
+              hiddenItemId.value = item.id;
+              suggestionsBox.style.display = "none";
+            };
+            suggestionsBox.appendChild(el);
+          });
 
-    // Add animation to table rows on load
-    const tableRows = document.querySelectorAll('.table-enhanced tbody tr');
-    tableRows.forEach((row, index) => {
-      row.style.animationDelay = `${index * 100}ms`;
-    });
-
-    // Add form validation feedback
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-      form.addEventListener('submit', function (e) {
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-
-        // Add loading state
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
-        submitBtn.disabled = true;
-
-        // Re-enable after 3 seconds in case submission fails
-        setTimeout(() => {
-          submitBtn.innerHTML = originalText;
-          submitBtn.disabled = false;
-        }, 3000);
-      });
-    });
-
-    // Enhance select elements
-    const selects = document.querySelectorAll('select');
-    selects.forEach(select => {
-      select.classList.add('form-control-enhanced');
-    });
+          suggestionsBox.style.display = "block";
+        });
+    }, 300);
   });
+}
+
+/* Hard validation */
+document.querySelector('form[action*="issue"]').addEventListener('submit', function (e) {
+  if (!hiddenItemId.value) {
+    e.preventDefault();
+    alert("Please select an item from the suggestion list.");
+  }
+});
 </script>
+
+
 
 {% endblock %}

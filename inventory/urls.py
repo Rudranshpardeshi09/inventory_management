@@ -24,9 +24,17 @@ urlpatterns = [
 
 
     # inssuances
-    path('issuances/', views.issuance_list, name='issuance_list'),
-    path('issuances/issue/', views.issue_item, name='issue_item'),
-    path('issuances/receive/', views.receive_item, name='receive_item'),
+    # path('issuances/', views.issuance_list, name='issuance_list'),
+    # # path('issuances/issue/', views.issue_item, name='issue_item'),
+    # path('issuances/receive/', views.receive_item, name='receive_item'),
+    # path("issuances/new/", views.issuance_create, name="issuance_create"),
+    # path("autocomplete/items/", views.item_autocomplete, name="item_autocomplete"),
+
+    path("issuances/", views.issuance_list, name="issuance_list"),
+    path("issuances/issue/", views.issue_item, name="issue_item"),
+    path("issuances/receive/", views.receive_item, name="receive_item"),
+    path("items/autocomplete/", views.item_autocomplete, name="item_autocomplete"),
+
 
     # Bulk delete imported items
     path("delete-imported/", views.delete_imported_items, name="delete_imported_items"),

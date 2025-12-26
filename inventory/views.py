@@ -9,11 +9,11 @@ from .forms import IssuanceForm, ReceiveForm
 import io
 import pandas as pd
 from django.urls import reverse
-from .forms import ExcelUploadForm, ColumnMappingForm
+from .forms import ExcelUploadForm, ColumnMappingForm, IssuanceForm, ReceiveForm
 from .utils import get_all_categories
 from django.template.loader import render_to_string
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 
 # Predefined categories for dropdown
 PREDEFINED_CATEGORIES = ["Sensor", "Connector", "Resistor", "Microcontroller"]
@@ -446,83 +446,147 @@ def transaction_history(request):
 #     ISSUER PAGE SECTION       #
 # ----------------------------- #
 
+# def issuance_list(request):
+#     """Display all issuances and provide issue/receive actions."""
+#     issuances = Issuance.objects.select_related('item').all().order_by('-issue_date')
+#     # form = IssuanceForm()
+#     # receive_form = ReceiveForm()
+#     return render(request, 'inventory/issuance_list.html', {
+#         'issuances': issuances,
+#         # 'form': form,
+#         # 'receive_form': receive_form,
+#     })
+
+
+
+# =====================================================
+# ISSUANCE LIST PAGE
+# =====================================================
 def issuance_list(request):
-    """Display all issuances and provide issue/receive actions."""
-    issuances = Issuance.objects.select_related('item').all().order_by('-issue_date')
-    form = IssuanceForm()
-    receive_form = ReceiveForm()
-    return render(request, 'inventory/issuance_list.html', {
-        'issuances': issuances,
-        'form': form,
-        'receive_form': receive_form,
+    issuances = Issuance.objects.select_related("item").order_by("-issue_date")
+    items = Item.objects.all().order_by("name")  # for dropdown / autocomplete
+
+    return render(request, "inventory/issuance_list.html", {
+        "issuances": issuances,
+        "items": items,
+        "issuance_form": IssuanceForm(),
+        "receive_form": ReceiveForm(),
     })
 
 
+# =====================================================
+# ITEM AUTOCOMPLETE (330 Ω behaviour)
+# =====================================================
+@require_GET
+def item_autocomplete(request):
+    q = request.GET.get("q", "").strip()
+
+    items = Item.objects.filter(name__icontains=q).order_by("name")[:10]
+
+    return JsonResponse([
+        {
+            "id": item.id,
+            "name": item.name,
+            "category": item.category,
+            "quantity": item.quantity
+        }
+        for item in items
+    ], safe=False)
+
+
+# =====================================================
+# ISSUE ITEM (CREATE ISSUANCE) – SINGLE SOURCE OF TRUTH
+# =====================================================
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect
+from django.utils import timezone
+from django.contrib import messages
+
 @transaction.atomic
 def issue_item(request):
-    """Handles issuing of components and deducts from stock."""
     if request.method != 'POST':
         return redirect('issuance_list')
 
-    form = IssuanceForm(request.POST)
-    if not form.is_valid():
-        for err in form.errors.values():
-            messages.error(request, err)
-        return redirect('issuance_list')
+    item_id = request.POST.get("item_id")
+    quantity = int(request.POST.get("quantity"))
 
-    item = form.cleaned_data['item']
-    qty = form.cleaned_data['quantity']
+    item = Item.objects.select_for_update().get(id=item_id)
 
-    # Lock item and update quantity safely
-    item = Item.objects.select_for_update().get(pk=item.pk)
-    if item.quantity < qty:
+    if item.quantity < quantity:
         messages.error(request, f"Not enough stock. Available: {item.quantity}")
-        return redirect('issuance_list')
+        return redirect("issuance_list")
 
-    Item.objects.filter(pk=item.pk).update(quantity=F('quantity') - qty)
+    Issuance.objects.create(
+        item=item,
+        quantity=quantity,
+        user=request.POST.get("user"),
+        receiver=request.POST.get("receiver"),
+        issuer=request.POST.get("issuer"),
+        issue_condition=request.POST.get("issue_condition"),
+        remark=request.POST.get("remark", "")
+    )
 
-    issuance = form.save(commit=False)
-    issuance.issue_date = timezone.now()
-    issuance.receive_date = None
-    issuance.received = False
-    issuance.save()
+    item.quantity -= quantity
+    item.save()
 
-    messages.success(request, f"Issued {qty} × {item.name} successfully.")
-    return redirect('issuance_list')
+    messages.success(request, "Component issued successfully.")
+    return redirect("issuance_list")
 
 
+    Issuance.objects.create(
+        item=item,
+        quantity=quantity,
+        user=request.POST.get("user"),
+        receiver=request.POST.get("receiver"),
+        issuer=request.POST.get("issuer"),
+        issue_condition=request.POST.get("issue_condition"),
+        remark=request.POST.get("remark", ""),
+        component_status="issued",
+        issue_date=timezone.now(),
+        received=False,
+    )
+
+    # 🔻 deduct stock
+    item.quantity -= quantity
+    item.save(update_fields=["quantity"])
+
+    messages.success(request, "Component issued successfully.")
+    return redirect("issuance_list")
+
+
+# =====================================================
+# RECEIVE ITEM (RETURN FLOW)
+# =====================================================
 @transaction.atomic
 def receive_item(request):
-    """Handles return/receive of issued components."""
-    if request.method != 'POST':
-        return redirect('issuance_list')
+    if request.method != "POST":
+        return redirect("issuance_list")
 
-    form = ReceiveForm(request.POST)
-    if not form.is_valid():
-        for err in form.errors.values():
-            messages.error(request, err)
-        return redirect('issuance_list')
+    issuance_id = request.POST.get("issuance_id")
+    component_status = request.POST.get("component_status")
+    remark = request.POST.get("remark", "")
 
-    issuance = get_object_or_404(Issuance, pk=form.cleaned_data['issuance_id'])
+    issuance = Issuance.objects.select_for_update().get(id=issuance_id)
+
     if issuance.received:
-        messages.warning(request, "This issuance has already been received.")
-        return redirect('issuance_list')
+        messages.warning(request, "This item is already received.")
+        return redirect("issuance_list")
 
-    status = form.cleaned_data['component_status']
-    remark = form.cleaned_data.get('remark', '')
-
-    issuance.component_status = status
-    issuance.receive_date = timezone.now()
+    issuance.component_status = component_status
     issuance.remark = remark
+    issuance.receive_date = timezone.now()
     issuance.received = True
     issuance.save()
 
-    # Add stock back if OK or Faulty
-    if status in ('ok', 'faulty'):
-        Item.objects.filter(pk=issuance.item.pk).update(quantity=F('quantity') + issuance.quantity)
+    # 🔼 add stock back ONLY if OK or FAULTY
+    if component_status in ["ok", "faulty"]:
+        Item.objects.filter(id=issuance.item.id).update(
+            quantity=F("quantity") + issuance.quantity
+        )
 
-    messages.success(request, f"Issuance #{issuance.pk} marked received as {status.upper()}. Stock updated.")
-    return redirect('issuance_list')
+    messages.success(request, "Component received successfully.")
+    return redirect("issuance_list")
+# =====================================================
 
 
 #bulk delete imported items

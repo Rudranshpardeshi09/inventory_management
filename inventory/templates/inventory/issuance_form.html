@@ -1,0 +1,158 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}Issue Component{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+    <h2 class="mb-4 fw-bold">
+        <i class="fas fa-paper-plane me-2"></i>Issue Component
+    </h2>
+
+    <form method="POST" class="card p-4 shadow-sm">
+        {% csrf_token %}
+
+        <!-- ITEM AUTOCOMPLETE -->
+        <div class="mb-3 position-relative">
+            <label class="form-label fw-semibold">Item</label>
+
+            <input type="text"
+                   id="itemSearch"
+                   class="form-control"
+                   placeholder="Start typing item name (e.g. 330 Ω)"
+                   autocomplete="off"
+                   required>
+
+            <input type="hidden" name="item_id" id="itemId">
+
+            <ul id="itemSuggestions"
+                class="list-group position-absolute w-100 shadow"
+                style="z-index:1000; display:none;"></ul>
+        </div>
+
+        <!-- Quantity -->
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Quantity</label>
+            <input type="number" name="quantity" class="form-control" min="1" required>
+        </div>
+
+        <!-- User -->
+        <div class="mb-3">
+            <label class="form-label fw-semibold">User (who will use)</label>
+            <input type="text" name="user" class="form-control" required>
+        </div>
+
+        <!-- Issuer -->
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Issuer</label>
+            <select name="issuer" id="issuerSelect" class="form-select" required>
+                <option value="">Select issuer</option>
+                <option value="harsh">Harsh</option>
+                <option value="gaurav">Gaurav</option>
+            </select>
+        </div>
+
+        <!-- Receiver -->
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Receiver</label>
+            <select name="receiver" id="receiverSelect" class="form-select" required>
+                <option value="">Select receiver</option>
+                <option value="harsh">Harsh</option>
+                <option value="gaurav">Gaurav</option>
+            </select>
+            <small class="text-muted">Issuer and receiver must be different</small>
+        </div>
+
+        <!-- Issue Condition -->
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Issue Condition</label>
+            <select name="issue_condition" class="form-select" required>
+                <option value="returnable">Returnable</option>
+                <option value="non_returnable">Non-returnable</option>
+            </select>
+        </div>
+
+        <!-- Component Status -->
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Component Status</label>
+            <select name="component_status" class="form-select" required>
+                <option value="ok">OK</option>
+                <option value="faulty">Faulty</option>
+                <option value="damaged">Damaged</option>
+                <option value="lost">Lost</option>
+            </select>
+        </div>
+
+        <!-- Remark -->
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Remark</label>
+            <textarea name="remark" class="form-control" rows="2"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Issue Component
+        </button>
+        <a href="{% url 'issuance_list' %}" class="btn btn-secondary">
+            Cancel
+        </a>
+    </form>
+</div>
+
+<!-- AUTOCOMPLETE + VALIDATION -->
+<script>
+const searchInput = document.getElementById("itemSearch");
+const suggestionsBox = document.getElementById("itemSuggestions");
+const hiddenItemId = document.getElementById("itemId");
+
+let debounceTimer = null;
+
+searchInput.addEventListener("input", function () {
+    clearTimeout(debounceTimer);
+    const query = this.value.trim();
+
+    if (query.length < 2) {
+        suggestionsBox.style.display = "none";
+        hiddenItemId.value = "";
+        return;
+    }
+
+    debounceTimer = setTimeout(() => {
+        fetch(`/items/autocomplete/?q=${query}`)
+            .then(res => res.json())
+            .then(data => {
+                suggestionsBox.innerHTML = "";
+                if (!data.length) {
+                    suggestionsBox.style.display = "none";
+                    return;
+                }
+
+                data.forEach(item => {
+                    const li = document.createElement("li");
+                    li.className = "list-group-item list-group-item-action";
+                    li.innerHTML = `<strong>${item.name}</strong>
+                        <small class="text-muted ms-2">(${item.category}) • Available: ${item.quantity}</small>`;
+                    li.onclick = () => {
+                        searchInput.value = item.name;
+                        hiddenItemId.value = item.id;
+                        suggestionsBox.style.display = "none";
+                    };
+                    suggestionsBox.appendChild(li);
+                });
+
+                suggestionsBox.style.display = "block";
+            });
+    }, 300);
+});
+
+// issuer ≠ receiver rule
+document.getElementById("receiverSelect").addEventListener("change", function () {
+    const issuer = document.getElementById("issuerSelect").value;
+    if (issuer && issuer === this.value) {
+        alert("Issuer and Receiver cannot be the same.");
+        this.value = "";
+    }
+});
+</script>
+
+{% endblock %}
