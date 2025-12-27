@@ -10,7 +10,7 @@
         <i class="fas fa-paper-plane me-2"></i>Issue Component
     </h2>
 
-    <form method="POST" class="card p-4 shadow-sm">
+    <form method="POST" class="card p-4 shadow-sm" id="issueForm">
         {% csrf_token %}
 
         <!-- ITEM AUTOCOMPLETE -->
@@ -104,34 +104,44 @@
 const searchInput = document.getElementById("itemSearch");
 const suggestionsBox = document.getElementById("itemSuggestions");
 const hiddenItemId = document.getElementById("itemId");
+const issuerSelect = document.getElementById("issuerSelect");
+const receiverSelect = document.getElementById("receiverSelect");
+const form = document.getElementById("issueForm");
 
 let debounceTimer = null;
 
+// 🔍 Autocomplete
 searchInput.addEventListener("input", function () {
     clearTimeout(debounceTimer);
     const query = this.value.trim();
 
+    hiddenItemId.value = "";
+
     if (query.length < 2) {
         suggestionsBox.style.display = "none";
-        hiddenItemId.value = "";
         return;
     }
 
     debounceTimer = setTimeout(() => {
-        fetch(`/items/autocomplete/?q=${query}`)
+        fetch(`/items/autocomplete/?q=${encodeURIComponent(query)}`)
             .then(res => res.json())
-            .then(data => {
+            .then(items => {
                 suggestionsBox.innerHTML = "";
-                if (!data.length) {
+
+                if (!items.length) {
                     suggestionsBox.style.display = "none";
                     return;
                 }
 
-                data.forEach(item => {
+                items.forEach(item => {
                     const li = document.createElement("li");
                     li.className = "list-group-item list-group-item-action";
-                    li.innerHTML = `<strong>${item.name}</strong>
-                        <small class="text-muted ms-2">(${item.category}) • Available: ${item.quantity}</small>`;
+                    li.innerHTML = `
+                        <strong>${item.name}</strong>
+                        <small class="text-muted ms-2">
+                            (${item.category}) • Available: ${item.quantity}
+                        </small>
+                    `;
                     li.onclick = () => {
                         searchInput.value = item.name;
                         hiddenItemId.value = item.id;
@@ -145,12 +155,25 @@ searchInput.addEventListener("input", function () {
     }, 300);
 });
 
-// issuer ≠ receiver rule
-document.getElementById("receiverSelect").addEventListener("change", function () {
-    const issuer = document.getElementById("issuerSelect").value;
-    if (issuer && issuer === this.value) {
+// 🚫 Issuer ≠ Receiver (UI)
+receiverSelect.addEventListener("change", function () {
+    if (issuerSelect.value && issuerSelect.value === this.value) {
         alert("Issuer and Receiver cannot be the same.");
         this.value = "";
+    }
+});
+
+// 🚫 Hard submit validation
+form.addEventListener("submit", function (e) {
+    if (!hiddenItemId.value) {
+        e.preventDefault();
+        alert("Please select an item from the suggestion list.");
+        return;
+    }
+
+    if (issuerSelect.value === receiverSelect.value) {
+        e.preventDefault();
+        alert("Issuer and Receiver must be different.");
     }
 });
 </script>

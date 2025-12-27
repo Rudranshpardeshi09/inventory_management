@@ -383,20 +383,18 @@
 
   <!-- Action Button -->
   <div class="text-end mb-4 slide-in-right">
-    <button class="btn btn-modern pulse-hover" data-bs-toggle="modal" data-bs-target="#issueModal">
-      <a href="{% url 'issue_item' %}" class="btn btn-primary mb-3">
-        <i class="fas fa-plus me-2"></i>Issue Component
-        <!-- <i class="fas fa-paper-plane me-2"></i>Issue Component -->
+    <button class="btn btn-primary btn-modern pulse-hover" data-bs-toggle="modal" data-bs-target="#issueModal"
+      type="button">
+      <i class="fas fa-plus me-2"></i>Issue Component
     </button>
-    </a>
   </div>
 
   <!-- Issuances Table -->
   <div class="card-enhanced p-4 fade-in-up" style="animation-delay: 0.1s;">
     <div class="table-responsive">
       <table class="table table-enhanced">
-        <thead >
-          <tr >
+        <thead>
+          <tr>
             <th><i class="fas fa-hashtag"></i></th>
             <th><i class="fas fa-cube"></i> Component</th>
             <th><i class="fas fa-boxes"></i> Qty</th>
@@ -489,11 +487,6 @@
     <div class="modal-content">
       <form method="post" action="{% url 'issue_item' %}">
         {% csrf_token %}
-        <div class="text-end mb-4 slide-in-right">
-          <button class="btn btn-primary btn-modern pulse-hover" data-bs-toggle="modal" data-bs-target="#issueModal">
-            <i class="fas fa-plus me-2"></i>Issue Component
-          </button>
-        </div>
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-md-6 position-relative">
@@ -641,64 +634,100 @@
 
 <!-- Enhanced JavaScript -->
 <script>
-const searchInput = document.getElementById("itemSearch");
-const suggestionsBox = document.getElementById("itemSuggestions");
-const hiddenItemId = document.getElementById("itemId");
+  const searchInput = document.getElementById("itemSearch");
+  const suggestionsBox = document.getElementById("itemSuggestions");
+  const hiddenItemId = document.getElementById("itemId");
 
-let debounceTimer = null;
+  let debounceTimer = null;
 
-if (searchInput) {
-  searchInput.addEventListener("input", function () {
-    clearTimeout(debounceTimer);
-    const query = this.value.trim();
+  if (searchInput) {
+    searchInput.addEventListener("input", function () {
+      clearTimeout(debounceTimer);
+      const query = this.value.trim();
 
-    hiddenItemId.value = "";
+      hiddenItemId.value = "";
 
-    if (query.length < 2) {
-      suggestionsBox.style.display = "none";
-      return;
-    }
+      if (query.length < 2) {
+        suggestionsBox.style.display = "none";
+        return;
+      }
 
-    debounceTimer = setTimeout(() => {
-      fetch(`/items/autocomplete/?q=${encodeURIComponent(query)}`)
-        .then(res => res.json())
-        .then(items => {
-          suggestionsBox.innerHTML = "";
-          if (!items.length) {
-            suggestionsBox.style.display = "none";
-            return;
-          }
+      debounceTimer = setTimeout(() => {
+        fetch(`/items/autocomplete/?q=${encodeURIComponent(query)}`)
+          .then(res => res.json())
+          .then(items => {
+            suggestionsBox.innerHTML = "";
+            if (!items.length) {
+              suggestionsBox.style.display = "none";
+              return;
+            }
 
-          items.forEach(item => {
-            const el = document.createElement("div");
-            el.className = "list-group-item list-group-item-action";
-            el.innerHTML = `
+            items.forEach(item => {
+              const el = document.createElement("div");
+              el.className = "list-group-item list-group-item-action";
+              el.innerHTML = `
               <strong>${item.name}</strong>
               <small class="text-muted ms-2">
                 (${item.category}) • Available: ${item.quantity}
               </small>
             `;
-            el.onclick = () => {
-              searchInput.value = item.name;
-              hiddenItemId.value = item.id;
-              suggestionsBox.style.display = "none";
-            };
-            suggestionsBox.appendChild(el);
+              el.onclick = () => {
+                searchInput.value = item.name;
+                hiddenItemId.value = item.id;
+                suggestionsBox.style.display = "none";
+              };
+              suggestionsBox.appendChild(el);
+            });
+
+            suggestionsBox.style.display = "block";
           });
-
-          suggestionsBox.style.display = "block";
-        });
-    }, 300);
-  });
-}
-
-/* Hard validation */
-document.querySelector('form[action*="issue"]').addEventListener('submit', function (e) {
-  if (!hiddenItemId.value) {
-    e.preventDefault();
-    alert("Please select an item from the suggestion list.");
+      }, 300);
+    });
   }
+
+  /* Hard validation */
+  document.querySelector('form[action*="issue"]').addEventListener('submit', function (e) {
+    if (!hiddenItemId.value) {
+      e.preventDefault();
+      alert("Please select an item from the suggestion list.");
+    }
+  });
+
+ 
+document.addEventListener("DOMContentLoaded", function () {
+
+  /* RECEIVE MODAL */
+  const receiveModal = document.getElementById("receiveModal");
+
+  if (receiveModal) {
+    receiveModal.addEventListener("show.bs.modal", function (event) {
+      const button = event.relatedTarget;
+      if (!button) return;
+
+      const issuanceId = button.getAttribute("data-issuance-id");
+
+      if (!issuanceId) {
+        alert("Invalid issuance selection.");
+        return;
+      }
+
+      document.getElementById("recvIssuanceId").value = issuanceId;
+
+      const itemName = button.getAttribute("data-item-name");
+      const qty = button.getAttribute("data-qty");
+      const issuer = button.getAttribute("data-issuer");
+
+      document.getElementById("recvInfo").innerHTML = `
+        <strong>${itemName}</strong><br>
+        Quantity: <b>${qty}</b><br>
+        Issued by: <b>${issuer}</b>
+      `;
+    });
+  }
+
 });
+
+
 </script>
 
 
