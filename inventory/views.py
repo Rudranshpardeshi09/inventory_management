@@ -14,6 +14,10 @@ from .utils import get_all_categories
 from django.template.loader import render_to_string
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
+from django.db.models import Q, CharField
+from django.db.models.functions import Cast
+from django.db.models import Q
+from django.core.paginator import Paginator
 
 # Predefined categories for dropdown
 PREDEFINED_CATEGORIES = ["Sensor", "Connector", "Resistor", "Microcontroller"]
@@ -214,50 +218,47 @@ def import_items_map(request):
 
 
 
-def dashboard(request):
-    total_items = Item.objects.count()
-    low_stock = Item.objects.filter(quantity__gt=0, quantity__lte=F('reorder_level')).count()
-    out_stock = Item.objects.filter(quantity=0).count()
-    items = Item.objects.all().order_by('serial_no')
-    paginator = Paginator(items, 50)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    context = {
-        'total_items': total_items,
-        'low_stock': low_stock,
-        'out_stock': out_stock,
-        'items': items,
-        'CATEGORIES': get_all_categories(),
-        'page_obj': page_obj,
-    }
-    return render(request, 'inventory/dashboard.html', context)
-
-
-# def inventory_list(request):
-
-#     search = request.GET.get("search", "").strip()
-#     category = request.GET.get("category", "").strip()
-    
+# def dashboard(request):
+#     total_items = Item.objects.count()
+#     low_stock = Item.objects.filter(quantity__gt=0, quantity__lte=F('reorder_level')).count()
+#     out_stock = Item.objects.filter(quantity=0).count()
 #     items = Item.objects.all().order_by('serial_no')
-#     if search:
-#         items = items.filter(name__icontains=search)
-
-#     if category:
-#         items = items.filter(category=category)
-
-#     items = items.order_by("serial_no")
-
 #     paginator = Paginator(items, 50)
 #     page_number = request.GET.get('page')
 #     page_obj = paginator.get_page(page_number)
 #     context = {
+#         'total_items': total_items,
+#         'low_stock': low_stock,
+#         'out_stock': out_stock,
 #         'items': items,
 #         'CATEGORIES': get_all_categories(),
 #         'page_obj': page_obj,
 #     }
-#     return render(request, 'inventory/inventory_list.html', context)
-from django.db.models import Q
-from django.core.paginator import Paginator
+#     return render(request, 'inventory/dashboard.html', context)
+
+def dashboard(request):
+    total_items = Item.objects.count()
+    low_stock = Item.objects.filter(
+        quantity__gt=0,
+        quantity__lte=F('reorder_level')
+    ).count()
+    out_stock = Item.objects.filter(quantity=0).count()
+
+    items_qs = Item.objects.order_by('serial_no')
+
+    paginator = Paginator(items_qs, 50)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'total_items': total_items,
+        'low_stock': low_stock,
+        'out_stock': out_stock,
+        'page_obj': page_obj,
+    }
+
+    return render(request, 'inventory/dashboard.html', context)
+
 
 def inventory_list(request):
     query = request.GET.get("q", "").strip()
@@ -271,7 +272,7 @@ def inventory_list(request):
         items = items.filter(
             Q(name__icontains=query) |
             Q(category__icontains=query) |
-            Q(storage_location__icontains=query)
+            Q(location__icontains=query)
         )
 
     # 🏷 CATEGORY FILTER (INDEPENDENT)
@@ -304,7 +305,7 @@ def inventory_live_search(request):
         items = items.filter(
             Q(name__icontains=query) |
             Q(category__icontains=query) |
-            Q(storage_location__icontains=query)
+            Q(location__icontains=query)
         )
 
     # 🏷 CATEGORY FILTER (if selected)
@@ -388,7 +389,7 @@ def edit_item(request, item_id):
     return render(request, 'inventory/edit_item.html',{
         'item': item,
         'CATEGORIES': get_all_categories(),
-    }) #
+    }) 
 
 
 def delete_item(request, item_id):

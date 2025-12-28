@@ -483,6 +483,7 @@
         </a>
     </div>
 
+    <!-- Search & Filter -->
     <form method="get" class="search-filter-card fade-in-up" style="animation-delay: 0.1s;">
         <div class="row g-3 align-items-center">
             <div class="col-md-6">
@@ -511,11 +512,11 @@
     </form>
 
 
-    <!-- Table Container -->
+    <!-- Inventory Table -->
     <div class="action-card fade-in-up" style="animation-delay: 0.2s;">
         <div class="table-responsive">
             <table class="table table-modern table-hover" id="inventoryTable">
-                <thead class="table-modern">
+                <thead>
                     <tr>
                         <th>S no.</th>
                         <th>Item Name</th>
@@ -528,7 +529,7 @@
                 </thead>
                 <tbody>
                     {% for item in page_obj %}
-                    <tr class="fade-in-up
+                    <tr class="
                     {% if item.quantity == 0 %}
                           row-out-stock
                          {% elif item.quantity <= item.reorder_level %}
@@ -545,7 +546,7 @@
                         </td>
 
                         <td>
-                            <span class="fw-bold fs-6 
+                            <span class="fw-bold  
                                 {% if item.quantity == 0 %}text-danger
                                 {% elif item.quantity <= item.reorder_level %}text-warning
                                 {% else %}text-success{% endif %}">
@@ -640,39 +641,6 @@
 
 </div>
 
-<!-- <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const searchInput = document.getElementById("searchInput");
-        const categoryFilter = document.getElementById("categoryFilter");
-
-        let debounceTimer = null;
-
-        function applyFilters() {
-            const params = new URLSearchParams(window.location.search);
-
-            const query = searchInput.value.trim();
-            const category = categoryFilter.value;
-
-            if (query) params.set("q", query);
-            else params.delete("q");
-
-            if (category) params.set("category", category);
-            else params.delete("category");
-
-            params.delete("page"); // reset pagination
-
-            window.location.search = params.toString();
-        }
-
-        searchInput.addEventListener("input", () => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(applyFilters, 1000);
-        });
-
-        categoryFilter.addEventListener("change", applyFilters);
-    });
-</script> -->
-
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const searchInput = document.getElementById("searchInput");
@@ -703,8 +671,4 @@
         categoryFilter.addEventListener("change", liveSearch);
     });
 </script>
-
-
-
-
 {% endblock %}
