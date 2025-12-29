@@ -1,21 +1,37 @@
 {% extends 'inventory/base.html' %}
 {% load static %}
 {% block content %}
+
 <div class="container py-5">
   <h2>Import Items from Excel</h2>
 
   <form method="post" enctype="multipart/form-data" class="card p-4">
     {% csrf_token %}
-    {{ form.non_field_errors }}
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
     <div class="mb-3">
-      {{ form.file.label_tag }}<br>
+      {{ form.file.label_tag }}
       {{ form.file }}
     </div>
+
     <div class="mb-3 form-check">
-      {{ form.has_header }} {{ form.has_header.label_tag }}
+      {{ form.has_header }}
+      {{ form.has_header.label_tag }}
     </div>
-    <button class="btn btn-primary" type="submit">Upload & Preview</button>
-    <a href="{% url 'inventory_list' %}" class="btn btn-secondary">Cancel</a>
+
+    <button class="btn btn-primary" type="submit">
+      Upload & Preview
+    </button>
+
+    <a href="{% url 'inventory_list' %}" class="btn btn-secondary">
+      Cancel
+    </a>
   </form>
 </div>
+
 {% endblock %}

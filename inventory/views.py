@@ -45,115 +45,129 @@ def import_items_upload(request):
     """
     if request.method == 'POST':
         form = ExcelUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            f = request.FILES['file']
-            filename = f.name.lower()
 
-            if not filename.endswith(ALLOWED_EXTENSIONS):
-                messages.error(request, "Unsupported file type. Upload .xlsx, .xls or .csv")
-                return redirect('import_items_upload')
+        if not form.is_valid():
+            return render(request, 'inventory/import_upload.html', {'form': form})
 
-            # Read into pandas DataFrame
-            try:
-                # read excel or csv
-                if filename.endswith(('.xls', '.xlsx')):
-                    df = pd.read_excel(f, engine='openpyxl' if filename.endswith('.xlsx') else None)
-                else:
-                    # csv
-                    file_bytes = f.read()
-                    encoding = 'utf-8'
-                    try:
-                        df = pd.read_csv(io.BytesIO(file_bytes), encoding=encoding)
-                    except Exception:
-                        # fallback with latin-1
-                        df = pd.read_csv(io.BytesIO(file_bytes), encoding='latin-1')
-                # Limit rows for preview/safety
-                preview = df.head(MAX_ROWS_PREVIEW)
-            except Exception as e:
-                messages.error(request, f"Failed to parse file: {e}")
-                return redirect('import_items_upload')
+        f = request.FILES['file']
+        filename = f.name.lower()
 
-            # store raw data in session as JSON-friendly format (list of dicts) OR in memory via request.FILES? 
-            # We'll store small preview + entire file in session via bytes (base64) is heavy — better: store file in temp
-            # For simplicity we'll save uploaded file in request.FILES -> but we need persistence across request.
-            # Simpler approach: save file bytes into session (if small). We'll limit to reasonable sizes.
-            try:
-                f.seek(0)
-                data_bytes = f.read()
-                # store in session as base64 string
-                import base64
-                request.session['import_file_name'] = filename
-                request.session['import_file_bytes'] = base64.b64encode(data_bytes).decode('ascii')
-                request.session['import_has_header'] = bool(form.cleaned_data.get('has_header', True))
-            except Exception as e:
-                messages.warning(request, "Failed to store file in session — you may need to re-upload on mapping step.")
-                # fallback: provide mapping immediately without persisting file
-                request.session.pop('import_file_bytes', None)
+        if not filename.endswith(ALLOWED_EXTENSIONS):
+            messages.error(
+                request,
+                "Unsupported file type. Upload .xlsx, .xls or .csv"
+            )
+            return redirect('import_items_upload')
 
-            # build columns list for mapping UI
-            cols = list(preview.columns.astype(str))
-            # convert preview to list-of-lists for template
-            preview_rows = preview.fillna('').astype(str).values.tolist()
+        try:
+            # Read file ONCE
+            file_bytes = f.read()
 
-            context = {
-                'cols': cols,
-                'preview_rows': preview_rows,
-                'importable_fields': IMPORTABLE_FIELDS,
-                'filename': filename,
-                'has_header': form.cleaned_data.get('has_header', True),
-            }
-            return render(request, 'inventory/import_mapping.html', context)
-    else:
-        form = ExcelUploadForm()
+            if filename.endswith(('.xls', '.xlsx')):
+                df = pd.read_excel(
+                    io.BytesIO(file_bytes),
+                    engine='openpyxl' if filename.endswith('.xlsx') else None
+                )
+            else:
+                try:
+                    df = pd.read_csv(io.BytesIO(file_bytes), encoding='utf-8')
+                except Exception:
+                    df = pd.read_csv(io.BytesIO(file_bytes), encoding='latin-1')
+
+            preview = df.head(MAX_ROWS_PREVIEW)
+
+        except Exception as e:
+            messages.error(request, f"Failed to parse file: {e}")
+            return redirect('import_items_upload')
+
+        # Store file safely in session (used by mapping step)
+        try:
+            import base64
+            request.session['import_file_name'] = filename
+            request.session['import_file_bytes'] = base64.b64encode(file_bytes).decode('ascii')
+            request.session['import_has_header'] = bool(form.cleaned_data.get('has_header', True))
+        except Exception:
+            messages.warning(
+                request,
+                "Failed to store file in session — you may need to re-upload on mapping step."
+            )
+            request.session.pop('import_file_bytes', None)
+
+        cols = list(preview.columns.astype(str))
+        preview_rows = preview.fillna('').astype(str).values.tolist()
+
+        context = {
+            'cols': cols,
+            'preview_rows': preview_rows,
+            'importable_fields': IMPORTABLE_FIELDS,
+            'filename': filename,
+            'has_header': form.cleaned_data.get('has_header', True),
+        }
+
+        return render(request, 'inventory/import_mapping.html', context)
+
+    # GET request
+    form = ExcelUploadForm()
     return render(request, 'inventory/import_upload.html', {'form': form})
+
 
 def import_items_map(request):
     """
     Mapping step: user posted mapping selection -> perform import.
     Expects the uploaded file in session as 'import_file_bytes'.
     """
-    # Reconstruct DataFrame from session
     import base64
+
     file_b64 = request.session.get('import_file_bytes')
     filename = request.session.get('import_file_name')
-    if not file_b64:
+
+    if not file_b64 or not filename:
         messages.error(request, "Upload file first.")
         return redirect('import_items_upload')
 
     file_bytes = base64.b64decode(file_b64)
+
     try:
         if filename.endswith(('.xls', '.xlsx')):
-            df = pd.read_excel(io.BytesIO(file_bytes), engine='openpyxl' if filename.endswith('.xlsx') else None)
+            df = pd.read_excel(
+                io.BytesIO(file_bytes),
+                engine='openpyxl' if filename.endswith('.xlsx') else None
+            )
         else:
-            # csv fallback
-            df = pd.read_csv(io.BytesIO(file_bytes), encoding='utf-8')
+            try:
+                df = pd.read_csv(io.BytesIO(file_bytes), encoding='utf-8')
+            except Exception:
+                df = pd.read_csv(io.BytesIO(file_bytes), encoding='latin-1')
     except Exception as e:
         messages.error(request, f"Could not read uploaded file: {e}")
         return redirect('import_items_upload')
 
     cols = list(df.columns.astype(str))
-    # Read mapping submitted by user
+
     if request.method == 'POST':
-        # mapping keys are like 'map_0', 'map_1' etc representing column indices
         mapping = {}
         for i, col in enumerate(cols):
             mapped_to = request.POST.get(f'map_{i}')
             if mapped_to:
-                mapping[col] = mapped_to  # mapped_to is model field name
+                mapping[col] = mapped_to
+
         if not mapping:
             messages.error(request, "No mapping provided. Map at least one column to import.")
             return redirect('import_items_upload')
 
-        # Build rows to import
+        # Prevent duplicate field mapping
+        if len(set(mapping.values())) != len(mapping.values()):
+            messages.error(request, "Each item field can only be mapped once.")
+            return redirect('import_items_upload')
+
         rows = []
         for _, row in df.iterrows():
             item_kwargs = {}
             for col_name, model_field in mapping.items():
-                # get value safely and convert for known numeric fields
-                raw_value = row.get(col_name, None)
+                raw_value = row.get(col_name)
                 if pd.isna(raw_value):
                     raw_value = None
-                # convert types if target is numeric
+
                 if model_field in ('quantity', 'reorder_level'):
                     try:
                         item_kwargs[model_field] = int(raw_value) if raw_value is not None else 0
@@ -166,56 +180,55 @@ def import_items_map(request):
                         item_kwargs[model_field] = 0.0
                 else:
                     item_kwargs[model_field] = str(raw_value).strip() if raw_value is not None else ''
+
             rows.append(item_kwargs)
 
-        # safety cap
         if len(rows) > MAX_IMPORT_ROWS:
             messages.error(request, f"File too large. Max {MAX_IMPORT_ROWS} rows allowed.")
             return redirect('import_items_upload')
 
-        # Start DB import transaction
         created = 0
         errors = []
+
         with transaction.atomic():
             for idx, kw in enumerate(rows, start=1):
-                # Build final kwargs for Item.create. Only include allowed fields.
                 item_data = {k: v for k, v in kw.items() if k in IMPORTABLE_FIELDS}
-                # if category field is empty, set default
+
                 if 'category' in item_data and not item_data['category']:
                     item_data['category'] = 'Other'
-                # Ensure numeric fields have defaults
+
                 item_data.setdefault('quantity', 0)
                 item_data.setdefault('reorder_level', 0)
                 item_data.setdefault('unit_price', 0.0)
 
-                item_data['is_imported'] = True # mark as imported
+                item_data['is_imported'] = True
 
-                # Validate (basic)
                 try:
                     Item.objects.create(**item_data)
                     created += 1
                 except Exception as e:
                     errors.append(f"Row {idx}: {e}")
-                    # depending on your policy you can rollback entire transaction or continue; here we continue but still inside transaction
-            # commit happens automatically if no exception
-        # cleanup session
+
         request.session.pop('import_file_bytes', None)
         request.session.pop('import_file_name', None)
+
         messages.success(request, f"Imported {created} rows.")
         if errors:
-            messages.warning(request, f"Import completed with errors: {len(errors)}. First error: {errors[0]}")
+            messages.warning(
+                request,
+                f"Import completed with errors: {len(errors)}. First error: {errors[0]}"
+            )
+
         return redirect('inventory_list')
 
-    # GET: render mapping UI if user arrives without POST (fallback)
     preview = df.head(MAX_ROWS_PREVIEW).fillna('').astype(str).values.tolist()
-    context = {
+
+    return render(request, 'inventory/import_mapping.html', {
         'cols': cols,
         'preview_rows': preview,
         'importable_fields': IMPORTABLE_FIELDS,
         'filename': filename,
-    }
-    return render(request, 'inventory/import_mapping.html', context)
-
+    })
 
 
 # def dashboard(request):
@@ -259,7 +272,6 @@ def dashboard(request):
 
     return render(request, 'inventory/dashboard.html', context)
 
-
 def inventory_list(request):
     query = request.GET.get("q", "").strip()
     category = request.GET.get("category", "").strip()
@@ -292,7 +304,6 @@ def inventory_list(request):
     }
 
     return render(request, "inventory/inventory_list.html", context)
-
 
 def inventory_live_search(request):
     query = request.GET.get("q", "").strip()
@@ -415,47 +426,102 @@ def delete_item(request, item_id):
     return redirect('inventory_list')
 
 
+# def add_stock(request, item_id):
+#     item = get_object_or_404(Item, id=item_id)
+#     if request.method == "POST":
+#         qty = int(request.POST.get("quantity"))
+#         item.quantity += qty
+#         item.save()
+#         txn = Transaction.objects.create(item=item, transaction_type='IN', quantity=qty)
+#         txn.date = timezone.now()
+#         txn.save()
+#         messages.success(request, f"{qty} units added to {item.name}")
+#         return redirect('inventory_list')
+#     return render(request, 'inventory/add_stock.html', {'item': item})
+
+
 def add_stock(request, item_id):
     item = get_object_or_404(Item, id=item_id)
+
     if request.method == "POST":
-        qty = int(request.POST.get("quantity"))
-        item.quantity += qty
-        item.save()
-        txn = Transaction.objects.create(item=item, transaction_type='IN', quantity=qty)
-        txn.date = timezone.now()
-        txn.save()
+        try:
+            qty = int(request.POST.get("quantity"))
+            if qty <= 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            messages.error(request, "Please enter a valid positive quantity.")
+            return redirect('add_stock', item_id=item.id)
+
+        # Atomic quantity update
+        Item.objects.filter(id=item.id).update(
+            quantity=F('quantity') + qty
+        )
+
+        Transaction.objects.create(
+            item=item,
+            transaction_type='IN',
+            quantity=qty
+        )
+
         messages.success(request, f"{qty} units added to {item.name}")
         return redirect('inventory_list')
+
     return render(request, 'inventory/add_stock.html', {'item': item})
 
 
 def remove_stock(request, item_id):
     item = get_object_or_404(Item, id=item_id)
+
     if request.method == "POST":
-        qty = int(request.POST.get("quantity"))
+        try:
+            qty = int(request.POST.get("quantity"))
+            if qty <= 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            messages.error(request, "Please enter a valid positive quantity.")
+            return redirect('remove_stock', item_id=item.id)
+
+        # Re-fetch current quantity safely
+        item.refresh_from_db()
+
         if qty > item.quantity:
-            messages.error(request, "Not enough stock available")
-        else:
-            item.quantity -= qty
-            item.save()
-            txn = Transaction.objects.create(item=item, transaction_type='OUT', quantity=qty)
-            txn.date = timezone.now()
-            txn.save()
-            messages.success(request, f"{qty} units removed from {item.name}")
+            messages.error(request, "Not enough stock available.")
+            return redirect('inventory_list')
+
+        # Atomic quantity update
+        Item.objects.filter(id=item.id).update(
+            quantity=F('quantity') - qty
+        )
+
+        Transaction.objects.create(
+            item=item,
+            transaction_type='OUT',
+            quantity=qty
+        )
+
+        messages.success(request, f"{qty} units removed from {item.name}")
         return redirect('inventory_list')
+
     return render(request, 'inventory/remove_stock.html', {'item': item})
 
 
+
 def transaction_history(request):
-    transactions = Transaction.objects.select_related('item').order_by('-date')
-    paginator = Paginator(transactions, 10)
+    transactions_qs = (
+        Transaction.objects
+        .select_related('item')
+        .order_by('-date')
+    )
+
+    paginator = Paginator(transactions_qs, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+
     context = {
-        'transactions': transactions,
-        'CATEGORIES': get_all_categories(),
         'page_obj': page_obj,
+        'CATEGORIES': get_all_categories(),
     }
+
     return render(request, 'inventory/transaction_history.html', context)
 
 
@@ -550,27 +616,6 @@ def issue_item(request):
     return redirect("issuance_list")
 
 
-    Issuance.objects.create(
-        item=item,
-        quantity=quantity,
-        user=request.POST.get("user"),
-        receiver=request.POST.get("receiver"),
-        issuer=request.POST.get("issuer"),
-        issue_condition=request.POST.get("issue_condition"),
-        remark=request.POST.get("remark", ""),
-        component_status="issued",
-        issue_date=timezone.now(),
-        received=False,
-    )
-
-    # 🔻 deduct stock
-    item.quantity -= quantity
-    item.save(update_fields=["quantity"])
-
-    messages.success(request, "Component issued successfully.")
-    return redirect("issuance_list")
-
-
 # =====================================================
 # RECEIVE ITEM (RETURN FLOW)
 # =====================================================
@@ -605,23 +650,20 @@ def receive_item(request):
     return redirect("issuance_list")
 # =====================================================
 
-
-#bulk delete imported items
+# bulk delete imported items
+@require_POST
 def delete_imported_items(request):
     """
-    Deletes all items that were imported via Excel.
+    Delete all items that were imported via Excel.
     """
-    if request.method == "POST":
-        with transaction.atomic():
-            qs = Item.objects.filter(is_imported=True)
-            count = qs.count()
-            qs.delete()
+    with transaction.atomic():
+        imported_items = Item.objects.filter(is_imported=True)
+        count = imported_items.count()
+        imported_items.delete()
 
-        messages.success(
-            request,
-            f"{count} imported items deleted successfully."
-        )
-    else:
-        messages.error(request, "Invalid request.")
+    messages.success(
+        request,
+        f"{count} imported items deleted successfully."
+    )
 
     return redirect("inventory_list")

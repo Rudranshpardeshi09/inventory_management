@@ -1,33 +1,32 @@
 {% extends 'inventory/base.html' %}
 {% load static %}
 {% block content %}
+
 <div class="container py-5">
   <h2>Map Excel columns to your Item fields</h2>
   <p>File: <strong>{{ filename }}</strong></p>
 
   <form method="post" action="{% url 'import_items_map' %}">
     {% csrf_token %}
+
     <table class="table table-bordered">
       <thead>
         <tr>
           <th>Excel Column</th>
-          <th>Preview (first {{ preview_rows|length }} rows)</th>
           <th>Map to field</th>
         </tr>
       </thead>
+
       <tbody>
         {% for col in cols %}
+        {% with col_index=forloop.counter0 %}
         <tr>
-          <td style="min-width:200px;"><strong>{{ col }}</strong></td>
-          <td>
-            <ul style="padding-left: 16px;">
-              {% for row in preview_rows %}
-              <li>{{ row|slice:forloop.counter0|default:"" }}</li>
-              {% endfor %}
-            </ul>
+          <td style="min-width:200px;">
+            <strong>{{ col }}</strong>
           </td>
+
           <td>
-            <select name="map_{{ forloop.counter0 }}" class="form-select">
+            <select name="map_{{ col_index }}" class="form-select">
               <option value="">-- skip --</option>
               {% for field_name, label in importable_fields.items %}
                 <option value="{{ field_name }}">{{ label }}</option>
@@ -35,6 +34,7 @@
             </select>
           </td>
         </tr>
+        {% endwith %}
         {% endfor %}
       </tbody>
     </table>
@@ -45,4 +45,5 @@
     </div>
   </form>
 </div>
+
 {% endblock %}

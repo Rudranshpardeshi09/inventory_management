@@ -237,13 +237,13 @@
                 <tr>
                     <td>{{ forloop.counter }}</td>
                     <td class="item-name fw-semibold">{{ txn.item.name }}</td>
-                    <td class="item-category">
 
+                    <td class="item-category">
                         <span class="badge badge-modern badge-category">
                             {{ txn.item.category }}
                         </span>
-
                     </td>
+
                     <td>
                         {% if txn.transaction_type == 'IN' %}
                         <span class="badge badge-in">Stock In</span>
@@ -251,12 +251,19 @@
                         <span class="badge badge-out">Stock Out</span>
                         {% endif %}
                     </td>
+
                     <td class="{% if txn.transaction_type == 'OUT' %}text-danger{% else %}text-success{% endif %}">
                         {{ txn.quantity }}
                     </td>
-                    <td><i class="fa-solid fa-location-dot me-2 text-muted"></i>{{ txn.storage_location }}</td>
+
+                    <td>
+                        <i class="fa-solid fa-location-dot me-2 text-muted"></i>
+                        {{ txn.item.location }}
+                    </td>
+
                     <td>{{ txn.date|localtime|date:"d-m-Y h:i A" }}</td>
                 </tr>
+
                 {% empty %}
                 <tr>
                     <td colspan="7" class="text-center py-5">
