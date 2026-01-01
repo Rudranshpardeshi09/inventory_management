@@ -432,10 +432,20 @@
               {% endif %}
             </td>
             <td>
+              {% if iss.issue_condition == "returnable" %}
+              {% if iss.received %}
               <span class="status-badge status-{{ iss.component_status }}">
                 {{ iss.get_component_status_display }}
               </span>
+              {% else %}
+              <span class="text-muted">-</span>
+              {% endif %}
+              {% else %}
+              <!-- Non-returnable: no status -->
+              <span class="text-muted">-</span>
+              {% endif %}
             </td>
+
             <td>{{ iss.get_issuer_display|title }}</td>
             <td>
               <span class="status-badge status-{{ iss.issue_condition }}">
@@ -449,7 +459,7 @@
               <span class="text-muted">-</span>
               {% endif %}
             </td>
-            <td>
+            <!-- <td>
               {% if not iss.received %}
               <button class="action-btn" style="background: var(--success);" data-bs-toggle="modal"
                 data-bs-target="#receiveModal" data-issuance-id="{{ iss.pk }}" data-item-name="{{ iss.item.name }}"
@@ -459,7 +469,30 @@
               {% else %}
               <span class="text-success fw-semibold"><i class="fas fa-check-circle"></i> Received</span>
               {% endif %}
+            </td> -->
+            <td>
+              {% if iss.issue_condition == "returnable" %}
+
+              {% if not iss.received %}
+              <button class="action-btn" style="background: var(--success);" data-bs-toggle="modal"
+                data-bs-target="#receiveModal" data-issuance-id="{{ iss.id }}" data-item-name="{{ iss.item.name }}"
+                data-qty="{{ iss.quantity }}" data-issuer="{{ iss.issuer }}" title="Mark as Received">
+                <i class="fas fa-check"></i>
+              </button>
+              {% else %}
+              <span class="text-success fw-semibold">
+                <i class="fas fa-check-circle"></i> Received
+              </span>
+              {% endif %}
+
+              {% else %}
+              <!-- NON-RETURNABLE -->
+              <span class="text-muted fst-italic">
+                Non-returnable
+              </span>
+              {% endif %}
             </td>
+
           </tr>
           {% empty %}
           <tr>
@@ -481,7 +514,7 @@
   </div>
 </div>
 
-<!-- Issue Modal -->
+<!-- Issue Model -->
 <div class="modal fade modal-enhanced" id="issueModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -576,7 +609,7 @@
   </div>
 </div>
 
-<!-- Receive Modal -->
+<!-- Receive Model -->
 <div class="modal fade modal-enhanced" id="receiveModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -693,39 +726,39 @@
     }
   });
 
- 
-document.addEventListener("DOMContentLoaded", function () {
 
-  /* RECEIVE MODAL */
-  const receiveModal = document.getElementById("receiveModal");
+  document.addEventListener("DOMContentLoaded", function () {
 
-  if (receiveModal) {
-    receiveModal.addEventListener("show.bs.modal", function (event) {
-      const button = event.relatedTarget;
-      if (!button) return;
+    /* RECEIVE MODAL */
+    const receiveModal = document.getElementById("receiveModal");
 
-      const issuanceId = button.getAttribute("data-issuance-id");
+    if (receiveModal) {
+      receiveModal.addEventListener("show.bs.modal", function (event) {
+        const button = event.relatedTarget;
+        if (!button) return;
 
-      if (!issuanceId) {
-        alert("Invalid issuance selection.");
-        return;
-      }
+        const issuanceId = button.getAttribute("data-issuance-id");
 
-      document.getElementById("recvIssuanceId").value = issuanceId;
+        if (!issuanceId) {
+          alert("Invalid issuance selection.");
+          return;
+        }
 
-      const itemName = button.getAttribute("data-item-name");
-      const qty = button.getAttribute("data-qty");
-      const issuer = button.getAttribute("data-issuer");
+        document.getElementById("recvIssuanceId").value = issuanceId;
 
-      document.getElementById("recvInfo").innerHTML = `
+        const itemName = button.getAttribute("data-item-name");
+        const qty = button.getAttribute("data-qty");
+        const issuer = button.getAttribute("data-issuer");
+
+        document.getElementById("recvInfo").innerHTML = `
         <strong>${itemName}</strong><br>
         Quantity: <b>${qty}</b><br>
         Issued by: <b>${issuer}</b>
       `;
-    });
-  }
+      });
+    }
 
-});
+  });
 
 
 </script>

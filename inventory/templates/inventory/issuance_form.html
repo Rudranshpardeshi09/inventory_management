@@ -129,7 +129,12 @@ searchInput.addEventListener("input", function () {
                 suggestionsBox.innerHTML = "";
 
                 if (!items.length) {
-                    suggestionsBox.style.display = "none";
+                    suggestionsBox.innerHTML = `
+                        <li class="list-group-item text-danger">
+                            ❌ No available item to issue
+                        </li>
+                    `;
+                    suggestionsBox.style.display = "block";
                     return;
                 }
 

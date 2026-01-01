@@ -565,7 +565,10 @@ def issuance_list(request):
 def item_autocomplete(request):
     q = request.GET.get("q", "").strip()
 
-    items = Item.objects.filter(name__icontains=q).order_by("name")[:10]
+    items = Item.objects.filter(
+        name__icontains=q,
+        quantity__gt=0   # ✅ only available items
+    )[:10]
 
     return JsonResponse([
         {
@@ -596,8 +599,17 @@ def issue_item(request):
 
     item = Item.objects.select_for_update().get(id=item_id)
 
-    if item.quantity < quantity:
-        messages.error(request, f"Not enough stock. Available: {item.quantity}")
+    # ❌ Block issuing if no stock
+    if item.quantity <= 0:
+        messages.error(request, "No available item to issue.")
+        return redirect("issuance_list")
+
+    # ❌ Block if requested quantity exceeds stock
+    if quantity > item.quantity:
+        messages.error(
+            request,
+            f"Only {item.quantity} unit(s) available for {item.name}."
+        )
         return redirect("issuance_list")
 
     Issuance.objects.create(
@@ -622,6 +634,14 @@ def issue_item(request):
 # =====================================================
 @transaction.atomic
 def receive_item(request):
+
+    # issuance = get_object_or_404(Issuance, pk=form.cleaned_data['issuance_id'])
+
+    # # 🚫 HARD STOP for non-returnable
+    # if issuance.issue_condition != "returnable":
+    #     messages.error(request, "This item is non-returnable and cannot be received.")
+    #     return redirect("issuance_list")
+
     if request.method != "POST":
         return redirect("issuance_list")
 
