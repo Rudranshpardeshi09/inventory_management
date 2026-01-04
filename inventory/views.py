@@ -412,7 +412,9 @@ def edit_item(request, item_id):
 
         item.save()
         messages.success(request, "Item updated successfully!")
-        return redirect('inventory_list')
+        # ✅ keep user on same page
+        page = request.GET.get("page", 1)
+        return redirect(f"/inventory/?page={page}")
 
     return render(request, 'inventory/edit_item.html', {
         'item': item,
@@ -424,7 +426,9 @@ def delete_item(request, item_id):
     item = get_object_or_404(Item, id=item_id)
     item.delete()
     messages.success(request, "Item deleted successfully!")
-    return redirect('inventory_list')
+    # ✅ keep user on same page
+    page = request.GET.get("page", 1)
+    return redirect(f"/inventory/?page={page}")
 
 
 # def add_stock(request, item_id):
@@ -465,7 +469,9 @@ def add_stock(request, item_id):
         )
 
         messages.success(request, f"{qty} units added to {item.name}")
-        return redirect('inventory_list')
+        # ✅ keep user on same page
+        page = request.GET.get("page", 1)
+        return redirect(f"/inventory/?page={page}")
 
     return render(request, 'inventory/add_stock.html', {'item': item})
 
@@ -501,7 +507,9 @@ def remove_stock(request, item_id):
         )
 
         messages.success(request, f"{qty} units removed from {item.name}")
-        return redirect('inventory_list')
+        # ✅ keep user on same page
+        page = request.GET.get("page", 1)
+        return redirect(f"/inventory/?page={page}")
 
     return render(request, 'inventory/remove_stock.html', {'item': item})
 
