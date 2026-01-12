@@ -285,7 +285,15 @@ def inventory_list(request):
     category = request.GET.get("category", "").strip()
     page_number = request.GET.get("page")
 
+    filter_type = request.GET.get("filter")
     items = Item.objects.all()
+
+    if filter_type == "low":
+        items = items.filter(quantity__gt=0, quantity__lte=F("reorder_level"))
+
+    elif filter_type == "out":
+        items = items.filter(quantity=0)
+    # ==============================
 
     # 🔍 GLOBAL SEARCH (ALL TEXT COLUMNS)
     if query:
@@ -302,6 +310,7 @@ def inventory_list(request):
     items = items.order_by("serial_no")
 
     paginator = Paginator(items, 50)
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
     context = {
@@ -309,6 +318,7 @@ def inventory_list(request):
         "CATEGORIES": get_all_categories(),
         "query": query,
         "selected_category": category,
+        "filter_type": filter_type,
     }
 
     return render(request, "inventory/inventory_list.html", context)

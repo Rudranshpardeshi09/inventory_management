@@ -323,48 +323,56 @@
     <!-- Summary Cards -->
     <div class="row mb-5">
         <div class="col-md-4 mb-4 fade-in" style="animation-delay: 0.1s;">
-            <div class="card stat-card p-4 border-0 h-100">
-                <div class="card-body text-center">
-                    <div class="card-icon mx-auto" style="background: var(--primary); color: white;">
-                        <i class="fas fa-boxes"></i>
+            <a href="{% url 'inventory_list' %}" class="text-decoration-none">
+                <div class="card stat-card p-4 border-0 h-100">
+                    <div class="card-body text-center">
+                        <div class="card-icon mx-auto" style="background: var(--primary); color: white;">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <h6 class="text-muted mb-2">TOTAL ITEMS</h6>
+                        <h2 class="fw-bold mb-0" style="color: var(--primary);">
+                            {{ total_items }}
+                        </h2>
+                        <p class="text-muted mt-2">Items in inventory</p>
                     </div>
-                    <h6 class="text-muted mb-2">TOTAL ITEMS</h6>
-                    <h2 class="fw-bold mb-0" style="color: var(--primary);">
-                        {{ total_items }}
-                    </h2>
-                    <p class="text-muted mt-2">Items in inventory</p>
                 </div>
-            </div>
+            </a>
         </div>
 
+
         <div class="col-md-4 mb-4 fade-in" style="animation-delay: 0.2s;">
-            <div class="card stat-card warning p-4 border-0 h-100">
-                <div class="card-body text-center">
-                    <div class="card-icon mx-auto" style="background: var(--warning); color: white;">
-                        <i class="fas fa-exclamation-triangle"></i>
+            <a href="{% url 'inventory_list' %}?filter=low" class="text-decoration-none">
+                <div class="card stat-card warning p-4 border-0 h-100">
+                    <div class="card-body text-center">
+                        <div class="card-icon mx-auto" style="background: var(--warning); color: white;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h6 class="text-muted mb-2">LOW STOCK</h6>
+                        <h2 class="fw-bold mb-0" style="color: var(--warning);">
+                            {{ low_stock }}
+                        </h2>
+                        <p class="text-muted mt-2">Need reordering</p>
                     </div>
-                    <h6 class="text-muted mb-2">LOW STOCK</h6>
-                    <h2 class="fw-bold mb-0" style="color: var(--warning);">
-                        {{ low_stock }}
-                    </h2>
-                    <p class="text-muted mt-2">Need reordering</p>
                 </div>
-            </div>
+            </a>
+
         </div>
 
         <div class="col-md-4 mb-4 fade-in" style="animation-delay: 0.3s;">
-            <div class="card stat-card danger p-4 border-0 h-100">
-                <div class="card-body text-center">
-                    <div class="card-icon mx-auto" style="background: var(--danger); color: white;">
-                        <i class="fas fa-times-circle"></i>
+            <a href="{% url 'inventory_list' %}?filter=out" class="text-decoration-none">
+                <div class="card stat-card danger p-4 border-0 h-100">
+                    <div class="card-body text-center">
+                        <div class="card-icon mx-auto" style="background: var(--danger); color: white;">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <h6 class="text-muted mb-2">OUT OF STOCK</h6>
+                        <h2 class="fw-bold mb-0" style="color: var(--danger);">
+                            {{ out_stock }}
+                        </h2>
+                        <p class="text-muted mt-2">Urgent attention needed</p>
                     </div>
-                    <h6 class="text-muted mb-2">OUT OF STOCK</h6>
-                    <h2 class="fw-bold mb-0" style="color: var(--danger);">
-                        {{ out_stock }}
-                    </h2>
-                    <p class="text-muted mt-2">Urgent attention needed</p>
                 </div>
-            </div>
+             </a>
         </div>
     </div>
 
@@ -440,7 +448,7 @@
         <ul class="pagination pagination-modern">
             {% if page_obj.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filter %}&filter={{ filter }}{% endif %}">
                     <i class="fas fa-chevron-left me-1"></i>Previous
                 </a>
             </li>
@@ -453,14 +461,14 @@
                 </li>
                 {% elif num > page_obj.number|add:'-7' and num < page_obj.number|add:'7' %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    <a class="page-link" href="?page={{ num }}{% if filter %}&filter={{ filter }}{% endif %}">{{ num }}</a>
                 </li>
                 {% endif %}
             {% endfor %}
 
             {% if page_obj.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filter %}&filter={{ filter }}{% endif %}">
                     Next<i class="fas fa-chevron-right ms-1"></i>
                 </a>
             </li>
