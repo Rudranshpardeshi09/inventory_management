@@ -1,21 +1,15 @@
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import send_mail
 from django.conf import settings
+import os
 
-def notify_head(subject, message):
-    """
-    Sends HTML email to inventory head
-    """
+HEAD_EMAIL = os.getenv("EMAIL_HOST_USER")
 
-    to_email = ["pdprakhar03@gmail.com"]  # change if needed
-
-    email = EmailMultiAlternatives(
+def notify_head(subject, html_message):
+    send_mail(
         subject=subject,
-        body="This email requires an HTML-compatible email client.",
+        message="This email requires HTML support.",  # fallback
         from_email=settings.DEFAULT_FROM_EMAIL,
-        to=to_email,
+        recipient_list=[HEAD_EMAIL],
+        html_message=html_message,  # ✅ THIS IS THE KEY
+        fail_silently=False,
     )
-
-    # ✅ THIS LINE MAKES HTML RENDER
-    email.attach_alternative(message, "text/html")
-
-    email.send(fail_silently=False)

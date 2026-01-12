@@ -702,12 +702,17 @@ def issue_item(request):
        # 🔔 EMAIL (THIS MUST EXECUTE)
     notify_head(
         subject="📤 Component Issued",
-        message=f"""
+        html_message=f"""
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; background-color:#f4f6f8; padding:20px;">
 
 <div style="max-width:600px; background:#ffffff; padding:20px; border:1px solid #ddd;">
+
+    <div style="background:#2e7d32; color:white; padding:10px 15px; font-size:16px;">
+    Inventory Notification
+    </div>
+
     
     <h2 style="color:#2e7d32; margin-bottom:10px;">
         📦 Component Issued Successfully
@@ -744,9 +749,13 @@ def issue_item(request):
         </tr>
     </table>
 
-    <p style="margin-top:20px; font-size:13px; color:#555;">
-        🔔 Inventory Management System
+    <hr style="margin-top:20px;">
+    <p style="font-size:12px; color:#777;">
+        This is an automated notification from Inventory Management System.
+        <br>
+        Time: {timezone.now().strftime('%d %b %Y, %H:%M')}
     </p>
+
 
 </div>
 
@@ -801,12 +810,17 @@ def receive_item(request):
         # 📧 EMAIL TO HEAD
     notify_head(
         subject="📥 Component Received",
-        message=f"""
+        html_message=f"""
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; background-color:#f4f6f8; padding:20px;">
 
 <div style="max-width:600px; background:#ffffff; padding:20px; border:1px solid #ddd;">
+
+    <div style="background:#2e7d32; color:white; padding:10px 15px; font-size:16px;">
+    Inventory Notification
+    </div>
+
 
     <h2 style="color:#1565c0; margin-bottom:10px;">
         📥 Component Received
@@ -839,10 +853,11 @@ def receive_item(request):
         </tr>
     </table>
 
-    <p style="margin-top:20px; font-size:13px; color:#555;">
-        Time: {timezone.now().strftime('%d %b %Y, %H:%M')}
+    <hr style="margin-top:20px;">
+    <p style="font-size:12px; color:#777;">
+        This is an automated notification from Inventory Management System.
         <br>
-        🔔 Inventory Management System
+        Time: {timezone.now().strftime('%d %b %Y, %H:%M')}
     </p>
 
 </div>
